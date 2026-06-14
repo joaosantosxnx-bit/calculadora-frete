@@ -340,3 +340,60 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+@media (max-width: 600px) {
+  .app {
+    padding: 12px;
+  }
+
+  .painel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .topo {
+    gap: 16px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .logos {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .logos img {
+    max-height: 42px;
+    max-width: 130px;
+  }
+
+  .titulo-area {
+    width: 100%;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .linha-tabela {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .historico-item {
+    grid-template-columns: 1fr;
+  }
+
+  .vencedor h2 {
+    font-size: 28px;
+  }
+}
