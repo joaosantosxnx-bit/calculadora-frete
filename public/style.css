@@ -5,115 +5,108 @@
 }
 
 body {
-  background:
-    radial-gradient(circle at top left, #1e40af 0, transparent 30%),
-    linear-gradient(135deg, #06142e, #0f172a);
+  background: #07172f;
   font-family: Arial, Helvetica, sans-serif;
-  min-height: 100vh;
   color: #0f172a;
-}
-
-.app {
   min-height: 100vh;
-  padding: 35px 20px;
-  display: flex;
-  justify-content: center;
 }
 
-.painel {
+.page {
   width: 100%;
   max-width: 1180px;
-  background: rgba(255, 255, 255, 0.97);
-  border-radius: 28px;
-  padding: 34px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  margin: 0 auto;
+  padding: 28px 18px;
 }
 
-.topo {
+.header {
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 26px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 25px;
-  padding-bottom: 26px;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 28px;
+  gap: 22px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  margin-bottom: 24px;
 }
 
-.logos {
+.brand {
   display: flex;
   align-items: center;
   gap: 18px;
+  min-width: 0;
 }
 
-.logos img {
-  max-height: 58px;
-  max-width: 170px;
+.logo-symbol {
+  width: 58px;
+  height: 58px;
   object-fit: contain;
 }
 
-.titulo-area {
+.logo-geofin {
+  width: 210px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.header-info {
   text-align: right;
 }
 
-.beta {
+.tag {
   display: inline-block;
-  background: linear-gradient(135deg, #facc15, #eab308);
+  background: #facc15;
   color: #111827;
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(234,179,8,0.35);
+  padding: 8px 16px;
+  border-radius: 999px;
+  margin-bottom: 10px;
 }
 
-
 h1 {
-  font-size: 40px;
+  font-size: 34px;
   color: #0f172a;
 }
 
-.topo p {
-  color: #64748b;
-  margin-top: 5px;
-}
-
-.layout {
+.main {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 390px 1fr;
   gap: 24px;
 }
 
-.card {
+.panel {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 24px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.18);
 }
 
-.formulario-card h2 {
-  margin-bottom: 20px;
+.form-panel h2,
+.result-panel h2,
+.history-panel h2 {
+  margin-bottom: 18px;
 }
 
-.grupo {
+.field {
   margin-bottom: 16px;
 }
 
-.grupo label {
+label {
   display: block;
   font-weight: 800;
   margin-bottom: 8px;
   color: #334155;
 }
 
-input, select {
+input,
+select {
   width: 100%;
-  height: 52px;
-  border-radius: 14px;
+  height: 54px;
   border: 1px solid #cbd5e1;
+  border-radius: 14px;
   padding: 0 14px;
-  font-size: 15px;
+  font-size: 16px;
   background: #ffffff;
 }
 
@@ -122,10 +115,11 @@ input[readonly] {
   font-weight: 700;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.16);
+  box-shadow: 0 0 0 4px rgba(22,163,74,0.15);
 }
 
 button {
@@ -134,7 +128,7 @@ button {
   border: none;
   border-radius: 16px;
   background: linear-gradient(135deg, #16a34a, #15803d);
-  color: white;
+  color: #ffffff;
   font-size: 17px;
   font-weight: 900;
   cursor: pointer;
@@ -142,233 +136,189 @@ button {
 }
 
 button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(22, 163, 74, 0.28);
+  filter: brightness(1.05);
 }
 
-.resultado-area {
-  min-height: 440px;
-}
-
-.vazio {
-  height: 100%;
-  min-height: 440px;
+.empty {
+  min-height: 360px;
   border: 2px dashed #cbd5e1;
-  border-radius: 22px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   color: #64748b;
   text-align: center;
+  padding: 20px;
 }
 
-.resumo {
+.summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 14px;
   margin-bottom: 18px;
 }
 
-.card-info {
+.info-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 18px;
   padding: 18px;
 }
 
-.card-info span {
+.info-card span {
   display: block;
-  color: #64748b;
   font-size: 13px;
+  color: #64748b;
+  font-weight: 800;
   margin-bottom: 8px;
-  font-weight: 700;
 }
 
-.card-info strong {
+.info-card strong {
   font-size: 20px;
-  color: #0f172a;
 }
 
-.vencedor {
+.winner {
   background: linear-gradient(135deg, #dcfce7, #bbf7d0);
   border: 1px solid #86efac;
   border-radius: 22px;
-  padding: 24px;
+  padding: 22px;
   margin-bottom: 18px;
 }
 
-.vencedor span {
+.winner span {
+  color: #166534;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.winner h2 {
+  font-size: 34px;
+  color: #14532d;
+  margin: 6px 0;
+}
+
+.winner p {
   color: #166534;
   font-weight: 800;
-  font-size: 14px;
 }
 
-.vencedor h2 {
-  color: #14532d;
-  font-size: 34px;
-  margin-top: 6px;
-}
-
-.vencedor p {
-  color: #166534;
-  margin-top: 6px;
-  font-weight: 700;
-}
-
-.tabela {
+.table {
   border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  border-radius: 18px;
   overflow: hidden;
-  background: #ffffff;
 }
 
-.linha-tabela {
+.row {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr;
-  padding: 17px 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid #e2e8f0;
   align-items: center;
 }
 
-.linha-tabela:last-child {
+.row:last-child {
   border-bottom: none;
 }
 
-.cabecalho {
+.row.head {
   background: #f1f5f9;
   font-weight: 900;
   color: #334155;
 }
 
-.valor {
-  font-weight: 900;
-  color: #0f172a;
-}
-
-.status-ok {
+.ok {
   color: #047857;
   font-weight: 900;
 }
 
-.status-nao {
+.no {
   color: #dc2626;
   font-weight: 900;
 }
 
-.detalhe {
-  margin-top: 16px;
-  background: #f8fafc;
-  border-radius: 18px;
-  padding: 16px;
-  font-size: 14px;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-}
-
-.alerta {
-  background: #fee2e2;
-  color: #991b1b;
-  padding: 16px;
-  border-radius: 14px;
+.value {
   font-weight: 900;
 }
 
-.historico {
-  margin-top: 28px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 22px;
+.history-panel {
+  margin-top: 24px;
 }
 
-.historico-topo {
+.history-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
 }
 
-.historico-topo span {
+.history-title span {
   color: #64748b;
   font-size: 14px;
 }
 
-.historico-item {
+.history-item {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 0.8fr 1fr 1fr;
+  grid-template-columns: 1.4fr 0.7fr 0.8fr 1fr 1fr;
   gap: 12px;
-  padding: 13px 0;
+  padding: 14px 0;
   border-bottom: 1px solid #e2e8f0;
   font-size: 14px;
 }
 
-.historico-item:last-child {
+.history-item:last-child {
   border-bottom: none;
 }
 
-.historico-item strong {
-  color: #0f172a;
-}
-
 footer {
-  margin-top: 24px;
   text-align: center;
-  color: #64748b;
+  color: #cbd5e1;
   font-size: 13px;
+  margin-top: 22px;
 }
 
+/* TABLET */
 @media (max-width: 900px) {
-  .layout {
+  .main {
     grid-template-columns: 1fr;
   }
 
-  .topo {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .titulo-area {
-    text-align: left;
-  }
-
-  .resumo {
+  .summary {
     grid-template-columns: 1fr;
   }
 
-  .historico-item {
+  .history-item {
     grid-template-columns: 1fr;
   }
 }
+
+/* CELULAR */
 @media (max-width: 600px) {
-  .app {
+  .page {
     padding: 12px;
   }
 
-  .painel {
-    padding: 18px;
-    border-radius: 18px;
-  }
-
-  .topo {
-    gap: 16px;
-    align-items: center;
+  .header {
+    flex-direction: column;
     text-align: center;
+    padding: 22px 18px;
+    border-radius: 20px;
   }
 
-  .logos {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
+  .brand {
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .logos img {
-    max-height: 42px;
-    max-width: 130px;
+  .logo-symbol {
+    width: 54px;
+    height: 54px;
   }
 
-  .titulo-area {
-    width: 100%;
+  .logo-geofin {
+    width: 190px;
+  }
+
+  .header-info {
     text-align: center;
   }
 
@@ -376,24 +326,28 @@ footer {
     font-size: 28px;
   }
 
-  .layout {
-    grid-template-columns: 1fr;
+  .panel {
+    padding: 20px;
+    border-radius: 20px;
   }
 
-  .resumo {
-    grid-template-columns: 1fr;
+  input,
+  select,
+  button {
+    height: 52px;
+    font-size: 16px;
   }
 
-  .linha-tabela {
+  .empty {
+    min-height: 220px;
+  }
+
+  .row {
     grid-template-columns: 1fr;
     gap: 6px;
   }
 
-  .historico-item {
-    grid-template-columns: 1fr;
-  }
-
-  .vencedor h2 {
-    font-size: 28px;
+  .winner h2 {
+    font-size: 30px;
   }
 }

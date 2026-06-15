@@ -4,84 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=5">
+  <link rel="stylesheet" href="/style.css?v=10">
 </head>
 <body>
 
-  <main class="app">
+  <div class="page">
 
-    <section class="painel">
+    <header class="header">
+      <div class="brand">
+        <img src="/assets/logo-f.png" class="logo-symbol" alt="Logo">
+        <img src="/assets/logo-geofin.png" class="logo-geofin" alt="Geofin">
+      </div>
 
-      <header class="topo">
-        <div class="logos">
-          <img src="assets/logo-f.png" alt="Logo" onerror="this.style.display='none'">
-          <img src="assets/logo-geofin.png" alt="Geofin" onerror="this.style.display='none'">
+      <div class="header-info">
+        <span class="tag">VERSÃO BETA</span>
+        <h1>Calculadora de Frete</h1>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <section class="panel form-panel">
+        <h2>Dados da Cotação</h2>
+
+        <div class="field">
+          <label>Origem</label>
+          <input type="text" value="Serra - ES" readonly>
         </div>
 
-        <div class="titulo-area">
-          <span class="beta">VERSÃO BETA</span>
-          <h1>Calculadora de Frete</h1>
-        </div>
-      </header>
-
-      <section class="layout">
-
-        <div class="card formulario-card">
-          <h2>Dados da Cotação</h2>
-
-          <div class="grupo">
-            <label>Origem</label>
-            <input type="text" value="Serra - ES" readonly>
-          </div>
-
-          <div class="grupo">
-            <label>UF destino</label>
-            <select id="ufDestino">
-              <option value="">Selecione</option>
-              <option value="ES">Espírito Santo</option>
-              <option value="SP">São Paulo</option>
-            </select>
-          </div>
-
-          <div class="grupo">
-            <label>Valor da Nota Fiscal</label>
-            <input id="valorNota" type="number" placeholder="Ex: 25000">
-          </div>
-
-          <div class="grupo">
-            <label>Peso da Carga KG</label>
-            <input id="peso" type="number" placeholder="Ex: 1000">
-          </div>
-
-          <button onclick="calcular()">Calcular Frete</button>
+        <div class="field">
+          <label>UF destino</label>
+          <select id="ufDestino">
+            <option value="">Selecione</option>
+            <option value="ES">Espírito Santo</option>
+            <option value="SP">São Paulo</option>
+          </select>
         </div>
 
-        <div class="resultado-area" id="resultado">
-          <div class="vazio">
-            <h2>Resultado da simulação</h2>
-            <p>Preencha os dados para gerar o comparativo.</p>
-          </div>
+        <div class="field">
+          <label>Valor da Nota Fiscal</label>
+          <input id="valorNota" type="number" placeholder="Ex: 25000">
         </div>
 
+        <div class="field">
+          <label>Peso da Carga KG</label>
+          <input id="peso" type="number" placeholder="Ex: 1000">
+        </div>
+
+        <button onclick="calcular()">Calcular Frete</button>
       </section>
 
-      <section class="historico">
-        <div class="historico-topo">
-          <h2>Últimas Cotações</h2>
-          <span>Histórico local</span>
+      <section class="panel result-panel" id="resultado">
+        <div class="empty">
+          <h2>Resultado da Simulação</h2>
+          <p>Preencha os dados para visualizar o comparativo.</p>
         </div>
-
-        <div id="historicoLista"></div>
       </section>
 
-      <footer>
-        Uso interno GEOFIN • Ambiente de teste
-      </footer>
+    </main>
 
+    <section class="panel history-panel">
+      <div class="history-title">
+        <h2>Últimas Cotações</h2>
+        <span>Histórico local</span>
+      </div>
+
+      <div id="historicoLista"></div>
     </section>
 
-  </main>
+    <footer>
+      Uso interno GEOFIN • Ambiente de teste
+    </footer>
 
-  <script src="/script.js?v=5"></script>
+  </div>
+
+  <script src="/script.js?v=10"></script>
 </body>
 </html>
