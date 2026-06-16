@@ -88,6 +88,7 @@ async function calcular() {
           <div>Status</div>
           <div>Valor</div>
         </div>
+
         <div class="row">
           <div>SAGIX</div>
           <div class="${dados.sagixAtende ? "ok" : "no"}">
