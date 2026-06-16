@@ -332,28 +332,10 @@ button:active:not(:disabled) {
   margin-top: 24px;
 }
 
-.history-title,
-.updates-title {
+.history-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.updates-panel {
-  margin-top: 18px;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-}
-
-.updates-panel ul {
-  margin-top: 16px;
-  padding-left: 18px;
-  color: #334155;
-  line-height: 1.75;
-}
-
-.updates-panel li {
-  margin-bottom: 10px;
 }
 
 .history-title span {
