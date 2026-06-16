@@ -44,42 +44,48 @@ function salvarHistorico(cotacao) {
 app.post("/calcular", (req, res) => {
     const { destino, valorNota, peso } = req.body;
 
-    if (!destino || valorNota <= 0 || peso <= 0) {
+    if (
+        typeof destino !== "string" ||
+        !["ES", "SP"].includes(destino) ||
+        typeof valorNota !== "number" ||
+        valorNota <= 0 ||
+        typeof peso !== "number" ||
+        peso <= 0
+    ) {
         return res.status(400).json({
             erro: "Dados inválidos."
         });
     }
 
     const sagixAtende = destino === "ES" || destino === "SP";
-
-    let valorSagix = null;
     let freteBaseSagix = 0;
     let icmsSagix = 0;
+    let valorSagix = null;
 
     if (sagixAtende) {
         freteBaseSagix = valorNota * SAGIX_PERCENTUAL_NOTA;
-
         const aliquotaIcms = destino === "ES" ? ICMS_ES : ICMS_SP;
-
         icmsSagix = freteBaseSagix * aliquotaIcms;
-
         valorSagix = freteBaseSagix + icmsSagix;
-
-        if (valorSagix < SAGIX_FRETE_MINIMO) {
-            valorSagix = SAGIX_FRETE_MINIMO;
-        }
+        valorSagix = Math.max(valorSagix, SAGIX_FRETE_MINIMO);
     }
 
-    const valorTjb =
+    let valorTjb =
         TJB_TAXA_FIXA +
-        (peso * TJB_VALOR_KG) +
-        (valorNota * TJB_PERCENTUAL_NOTA) +
+        peso * TJB_VALOR_KG +
+        valorNota * TJB_PERCENTUAL_NOTA +
         TJB_DESCARGA;
+
+    const divisor = 0.82;
+    if (sagixAtende && valorSagix !== null) {
+        valorSagix = valorSagix / divisor;
+    }
+    valorTjb = valorTjb / divisor;
 
     let melhorOpcao = "TJB";
     let economia = 0;
 
-    if (sagixAtende) {
+    if (sagixAtende && valorSagix !== null) {
         if (valorSagix < valorTjb) {
             melhorOpcao = "SAGIX";
             economia = valorTjb - valorSagix;
@@ -105,12 +111,12 @@ app.post("/calcular", (req, res) => {
 
     res.json({
         sagixAtende,
-        freteBaseSagix,
-        icmsSagix,
-        valorSagix,
-        valorTjb,
+        freteBaseSagix: Number(freteBaseSagix.toFixed(2)),
+        icmsSagix: Number(icmsSagix.toFixed(2)),
+        valorSagix: valorSagix === null ? null : Number(valorSagix.toFixed(2)),
+        valorTjb: Number(valorTjb.toFixed(2)),
         melhorOpcao,
-        economia
+        economia: Number(economia.toFixed(2))
     });
 });
 

@@ -1,3 +1,35 @@
 [
- 
+  {
+    "data": "16/06/2026, 12:07:32",
+    "origem": "Serra - ES",
+    "destino": "ES",
+    "valorNota": 28000,
+    "peso": 322,
+    "valorSagix": 1498,
+    "valorTjb": 979.4031600000001,
+    "melhorOpcao": "TJB",
+    "economia": 518.5968399999999
+  },
+  {
+    "data": "16/06/2026, 12:02:59",
+    "origem": "Serra - ES",
+    "destino": "ES",
+    "valorNota": 2800,
+    "peso": 500,
+    "valorSagix": 1250,
+    "valorTjb": 851.4300000000001,
+    "melhorOpcao": "TJB",
+    "economia": 398.56999999999994
+  },
+  {
+    "data": "16/06/2026, 11:13:25",
+    "origem": "Serra - ES",
+    "destino": "ES",
+    "valorNota": 28000,
+    "peso": 800,
+    "valorSagix": 1498,
+    "valorTjb": 1312.464,
+    "melhorOpcao": "TJB",
+    "economia": 185.53600000000006
+  }
 ]
