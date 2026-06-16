@@ -7,8 +7,12 @@ const elementos = {
   resultado: document.getElementById("resultado"),
   botaoCalcular: document.getElementById("btnCalcular"),
   historicoLista: document.getElementById("historicoLista"),
-  botaoExportarCsv: document.getElementById("btnExportCsv")
+  botaoExportarCsv: document.getElementById("btnExportCsv"),
+  botaoTema: document.getElementById("btnTema"),
+  botoesFiltro: document.querySelectorAll("[data-filtro]")
 };
+
+let filtroAtual = "";
 
 function moeda(valor) {
   return Number(valor).toLocaleString("pt-BR", {
@@ -45,6 +49,38 @@ function showToast(mensagem, timeout = 3000) {
     toast.classList.add("is-leaving");
     setTimeout(() => toast.remove(), 220);
   }, timeout);
+}
+
+function aplicarTema(tema) {
+  const claro = tema === "claro";
+  document.body.classList.toggle("theme-light", claro);
+  elementos.botaoTema.textContent = claro ? "Modo escuro" : "Modo claro";
+  elementos.botaoTema.setAttribute("aria-pressed", String(claro));
+  localStorage.setItem("temaCalculadoraFrete", tema);
+}
+
+function alternarTema() {
+  const temaAtual = document.body.classList.contains("theme-light") ? "escuro" : "claro";
+  aplicarTema(temaAtual);
+}
+
+function iniciarTema() {
+  const temaSalvo = localStorage.getItem("temaCalculadoraFrete");
+  aplicarTema(temaSalvo === "claro" ? "claro" : "escuro");
+}
+
+function atualizarBotoesFiltro() {
+  elementos.botoesFiltro.forEach((botao) => {
+    const ativo = botao.dataset.filtro === filtroAtual;
+    botao.classList.toggle("is-active", ativo);
+    botao.setAttribute("aria-pressed", String(ativo));
+  });
+}
+
+function aplicarFiltro(uf) {
+  filtroAtual = uf;
+  atualizarBotoesFiltro();
+  carregarHistorico();
 }
 
 function baixarArquivo(conteudo, nomeArquivo, tipo) {
@@ -227,7 +263,16 @@ async function carregarHistorico() {
       return;
     }
 
-    elementos.historicoLista.innerHTML = historico.slice(0, 6).map((item) => `
+    const historicoFiltrado = filtroAtual
+      ? historico.filter((item) => item.destino === filtroAtual)
+      : historico;
+
+    if (historicoFiltrado.length === 0) {
+      elementos.historicoLista.innerHTML = `<p class="muted">Nenhuma cotação encontrada para este filtro.</p>`;
+      return;
+    }
+
+    elementos.historicoLista.innerHTML = historicoFiltrado.slice(0, 6).map((item) => `
       <div class="history-item">
         <div>
           <span>Data</span>
@@ -258,5 +303,11 @@ async function carregarHistorico() {
 
 elementos.botaoCalcular.addEventListener("click", calcular);
 elementos.botaoExportarCsv.addEventListener("click", exportarHistoricoCsv);
+elementos.botaoTema.addEventListener("click", alternarTema);
+elementos.botoesFiltro.forEach((botao) => {
+  botao.addEventListener("click", () => aplicarFiltro(botao.dataset.filtro));
+});
 
+iniciarTema();
+atualizarBotoesFiltro();
 carregarHistorico();

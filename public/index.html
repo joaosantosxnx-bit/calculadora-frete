@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=14">
+  <link rel="stylesheet" href="/style.css?v=15">
 </head>
 <body>
   <div class="page">
@@ -18,6 +18,7 @@
         <span class="tag">VERSÃO BETA</span>
         <h1>Calculadora de Frete</h1>
         <p>Simulação interna com origem fixa em Serra - ES.</p>
+        <button class="theme-toggle" id="btnTema" type="button" aria-pressed="false">Modo claro</button>
       </div>
     </header>
 
@@ -70,7 +71,14 @@
           <span>Histórico local</span>
           <h2 id="titulo-historico">Últimas Cotações</h2>
         </div>
-        <button class="secondary-action" id="btnExportCsv" type="button">Exportar CSV</button>
+        <div class="history-actions" aria-label="Ações do histórico">
+          <div class="filter-group" aria-label="Filtrar histórico por UF">
+            <button class="filter-button is-active" data-filtro="" type="button">Todos</button>
+            <button class="filter-button" data-filtro="ES" type="button">ES</button>
+            <button class="filter-button" data-filtro="SP" type="button">SP</button>
+          </div>
+          <button class="secondary-action" id="btnExportCsv" type="button">Exportar CSV</button>
+        </div>
       </div>
 
       <div id="historicoLista"></div>
@@ -82,6 +90,6 @@
   </div>
 
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script src="/script.js?v=14"></script>
+  <script src="/script.js?v=15"></script>
 </body>
 </html>
