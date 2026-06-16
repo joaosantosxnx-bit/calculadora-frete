@@ -120,17 +120,20 @@ body {
     color: #ffffff;
     border-color: var(--green-dark);
   }
-  align-items: center;
-  min-height: 28px;
-  padding: 5px 10px;
-  margin-bottom: 8px;
-  background: var(--warning);
-  border-radius: 6px;
-  color: #201a00;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0;
-}
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    background: var(--warning);
+    border-radius: 6px;
+    color: #201a00;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
 
 h1 {
   color: var(--text);
