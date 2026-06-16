@@ -27,6 +27,10 @@ Sistema web em Node.js + Express para simulação de frete interno.
   - descarga: 400
 - Não mostrar descarga separada na tela.
 
+### Divisor final
+- Depois de calcular o valor da SAGIX e da TJB, o valor final de cada cotação deve ser dividido por 0,82.
+- A comparação de melhor opção deve usar os valores finais já divididos por 0,82.
+
 ## Regras visuais
 - Visual precisa parecer sistema corporativo.
 - Evitar aparência amadora.

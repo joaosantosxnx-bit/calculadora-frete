@@ -13,6 +13,7 @@ const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
 
 const ORIGEM_FIXA = "Serra - ES";
 const DESTINOS_PERMITIDOS = ["ES", "SP"];
+const DIVISOR_FINAL_COTACAO = 0.82;
 
 // SAGIX
 const SAGIX_PERCENTUAL_NOTA = 0.05;
@@ -74,13 +75,15 @@ app.post("/calcular", (req, res) => {
   const freteBaseSagix = valorNota * SAGIX_PERCENTUAL_NOTA;
   const icmsSagix = freteBaseSagix * ICMS_POR_UF[destino];
   const valorSagixCalculado = freteBaseSagix + icmsSagix;
-  const valorSagix = Math.max(valorSagixCalculado, SAGIX_FRETE_MINIMO);
+  const valorSagixAntesDivisor = Math.max(valorSagixCalculado, SAGIX_FRETE_MINIMO);
+  const valorSagix = valorSagixAntesDivisor / DIVISOR_FINAL_COTACAO;
 
-  const valorTjb =
+  const valorTjbAntesDivisor =
     TJB_TAXA_FIXA +
     peso * TJB_VALOR_KG +
     valorNota * TJB_PERCENTUAL_NOTA +
     TJB_DESCARGA;
+  const valorTjb = valorTjbAntesDivisor / DIVISOR_FINAL_COTACAO;
 
   const melhorOpcao = valorSagix <= valorTjb ? "SAGIX" : "TJB";
   const economia = Math.abs(valorSagix - valorTjb);
