@@ -11,11 +11,16 @@ app.use(express.static("public"));
 
 const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
 
+const ORIGEM_FIXA = "Serra - ES";
+const DESTINOS_PERMITIDOS = ["ES", "SP"];
+
 // SAGIX
 const SAGIX_PERCENTUAL_NOTA = 0.05;
 const SAGIX_FRETE_MINIMO = 1250;
-const ICMS_ES = 0.07;
-const ICMS_SP = 0.12;
+const ICMS_POR_UF = {
+  ES: 0.07,
+  SP: 0.12
+};
 
 // TJB provisório
 const TJB_TAXA_FIXA = 75.04;
@@ -23,109 +28,94 @@ const TJB_VALOR_KG = 0.69678;
 const TJB_PERCENTUAL_NOTA = 0.01;
 const TJB_DESCARGA = 400;
 
-function lerHistorico() {
-    if (!fs.existsSync(HISTORICO_PATH)) {
-        fs.writeFileSync(HISTORICO_PATH, "[]");
-    }
+function arredondarMoeda(valor) {
+  return Number(valor.toFixed(2));
+}
 
-    return JSON.parse(fs.readFileSync(HISTORICO_PATH, "utf8"));
+function lerHistorico() {
+  if (!fs.existsSync(HISTORICO_PATH)) {
+    fs.writeFileSync(HISTORICO_PATH, "[]");
+  }
+
+  try {
+    const conteudo = fs.readFileSync(HISTORICO_PATH, "utf8");
+    const historico = JSON.parse(conteudo);
+    return Array.isArray(historico) ? historico : [];
+  } catch (erro) {
+    return [];
+  }
 }
 
 function salvarHistorico(cotacao) {
-    const historico = lerHistorico();
+  const historico = lerHistorico();
+  const historicoLimitado = [cotacao, ...historico].slice(0, 20);
 
-    historico.unshift(cotacao);
+  fs.writeFileSync(HISTORICO_PATH, JSON.stringify(historicoLimitado, null, 2));
+}
 
-    const historicoLimitado = historico.slice(0, 20);
-
-    fs.writeFileSync(HISTORICO_PATH, JSON.stringify(historicoLimitado, null, 2));
+function numeroValido(valor) {
+  return typeof valor === "number" && Number.isFinite(valor) && valor > 0;
 }
 
 app.post("/calcular", (req, res) => {
-    const { destino, valorNota, peso } = req.body;
+  const { destino, valorNota, peso } = req.body;
 
-    if (
-        typeof destino !== "string" ||
-        !["ES", "SP"].includes(destino) ||
-        typeof valorNota !== "number" ||
-        valorNota <= 0 ||
-        typeof peso !== "number" ||
-        peso <= 0
-    ) {
-        return res.status(400).json({
-            erro: "Dados inválidos."
-        });
-    }
-
-    const sagixAtende = destino === "ES" || destino === "SP";
-    let freteBaseSagix = 0;
-    let icmsSagix = 0;
-    let valorSagix = null;
-
-    if (sagixAtende) {
-        freteBaseSagix = valorNota * SAGIX_PERCENTUAL_NOTA;
-        const aliquotaIcms = destino === "ES" ? ICMS_ES : ICMS_SP;
-        icmsSagix = freteBaseSagix * aliquotaIcms;
-        valorSagix = freteBaseSagix + icmsSagix;
-        valorSagix = Math.max(valorSagix, SAGIX_FRETE_MINIMO);
-    }
-
-    let valorTjb =
-        TJB_TAXA_FIXA +
-        peso * TJB_VALOR_KG +
-        valorNota * TJB_PERCENTUAL_NOTA +
-        TJB_DESCARGA;
-
-    const divisor = 0.82;
-    if (sagixAtende && valorSagix !== null) {
-        valorSagix = valorSagix / divisor;
-    }
-    valorTjb = valorTjb / divisor;
-
-    let melhorOpcao = "TJB";
-    let economia = 0;
-
-    if (sagixAtende && valorSagix !== null) {
-        if (valorSagix < valorTjb) {
-            melhorOpcao = "SAGIX";
-            economia = valorTjb - valorSagix;
-        } else {
-            melhorOpcao = "TJB";
-            economia = valorSagix - valorTjb;
-        }
-    }
-
-    const cotacao = {
-        data: new Date().toLocaleString("pt-BR"),
-        origem: "Serra - ES",
-        destino,
-        valorNota,
-        peso,
-        valorSagix,
-        valorTjb,
-        melhorOpcao,
-        economia
-    };
-
-    salvarHistorico(cotacao);
-
-    res.json({
-        sagixAtende,
-        freteBaseSagix: Number(freteBaseSagix.toFixed(2)),
-        icmsSagix: Number(icmsSagix.toFixed(2)),
-        valorSagix: valorSagix === null ? null : Number(valorSagix.toFixed(2)),
-        valorTjb: Number(valorTjb.toFixed(2)),
-        melhorOpcao,
-        economia: Number(economia.toFixed(2))
+  if (
+    typeof destino !== "string" ||
+    !DESTINOS_PERMITIDOS.includes(destino) ||
+    !numeroValido(valorNota) ||
+    !numeroValido(peso)
+  ) {
+    return res.status(400).json({
+      erro: "Dados inválidos. Informe UF, valor da nota e peso maiores que zero."
     });
+  }
+
+  const freteBaseSagix = valorNota * SAGIX_PERCENTUAL_NOTA;
+  const icmsSagix = freteBaseSagix * ICMS_POR_UF[destino];
+  const valorSagixCalculado = freteBaseSagix + icmsSagix;
+  const valorSagix = Math.max(valorSagixCalculado, SAGIX_FRETE_MINIMO);
+
+  const valorTjb =
+    TJB_TAXA_FIXA +
+    peso * TJB_VALOR_KG +
+    valorNota * TJB_PERCENTUAL_NOTA +
+    TJB_DESCARGA;
+
+  const melhorOpcao = valorSagix <= valorTjb ? "SAGIX" : "TJB";
+  const economia = Math.abs(valorSagix - valorTjb);
+
+  const resposta = {
+    sagixAtende: true,
+    freteBaseSagix: arredondarMoeda(freteBaseSagix),
+    icmsSagix: arredondarMoeda(icmsSagix),
+    valorSagix: arredondarMoeda(valorSagix),
+    valorTjb: arredondarMoeda(valorTjb),
+    melhorOpcao,
+    economia: arredondarMoeda(economia)
+  };
+
+  salvarHistorico({
+    data: new Date().toLocaleString("pt-BR"),
+    origem: ORIGEM_FIXA,
+    destino,
+    valorNota: arredondarMoeda(valorNota),
+    peso: arredondarMoeda(peso),
+    valorSagix: resposta.valorSagix,
+    valorTjb: resposta.valorTjb,
+    melhorOpcao,
+    economia: resposta.economia
+  });
+
+  return res.json(resposta);
 });
 
 app.get("/historico", (req, res) => {
-    res.json(lerHistorico());
+  return res.json(lerHistorico());
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

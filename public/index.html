@@ -4,36 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=10">
+  <link rel="stylesheet" href="/style.css?v=13">
 </head>
 <body>
-
   <div class="page">
-
     <header class="header">
-      <div class="brand">
-        <img src="/assets/logo-f.png" class="logo-symbol" alt="Logo">
-        <img src="/assets/logo-geofin.png" class="logo-geofin" alt="Geofin">
+      <div class="brand" aria-label="GEOFIN">
+        <img src="/assets/logo-f.png" class="logo-symbol" alt="">
+        <img src="/assets/logo-geofin.png" class="logo-geofin" alt="GEOFIN">
       </div>
 
       <div class="header-info">
         <span class="tag">VERSÃO BETA</span>
         <h1>Calculadora de Frete</h1>
+        <p>Simulação interna com origem fixa em Serra - ES.</p>
       </div>
     </header>
 
     <main class="main">
-
-      <section class="panel form-panel">
-        <h2>Dados da Cotação</h2>
-
-        <div class="field">
-          <label>Origem</label>
-          <input type="text" value="Serra - ES" readonly>
+      <section class="panel form-panel" aria-labelledby="titulo-formulario">
+        <div class="section-heading">
+          <span>Entrada</span>
+          <h2 id="titulo-formulario">Dados da Cotação</h2>
         </div>
 
         <div class="field">
-          <label>UF destino</label>
+          <label for="origem">Origem</label>
+          <input id="origem" type="text" value="Serra - ES" readonly>
+        </div>
+
+        <div class="field">
+          <label for="ufDestino">UF destino</label>
           <select id="ufDestino">
             <option value="">Selecione</option>
             <option value="ES">Espírito Santo</option>
@@ -42,31 +43,34 @@
         </div>
 
         <div class="field">
-          <label>Valor da Nota Fiscal</label>
-          <input id="valorNota" type="number" placeholder="Ex: 25000">
+          <label for="valorNota">Valor da nota fiscal</label>
+          <input id="valorNota" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 25000">
         </div>
 
         <div class="field">
-          <label>Peso da Carga KG</label>
-          <input id="peso" type="number" placeholder="Ex: 1000">
+          <label for="peso">Peso da carga (kg)</label>
+          <input id="peso" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 1000">
         </div>
 
-        <button id="btnCalcular" type="button" onclick="calcular()">Calcular Frete</button>
+        <button id="btnCalcular" type="button">Calcular frete</button>
       </section>
 
-      <section class="panel result-panel" id="resultado">
+      <section class="panel result-panel" id="resultado" aria-live="polite">
         <div class="empty">
+          <span>Comparativo</span>
           <h2>Resultado da Simulação</h2>
-          <p>Preencha os dados para visualizar o comparativo.</p>
+          <p>Preencha os dados para visualizar SAGIX e TJB lado a lado.</p>
         </div>
       </section>
-
     </main>
 
-    <section class="panel history-panel">
+    <section class="panel history-panel" aria-labelledby="titulo-historico">
       <div class="history-title">
-        <h2>Últimas Cotações</h2>
-        <span>Histórico local</span>
+        <div>
+          <span>Histórico local</span>
+          <h2 id="titulo-historico">Últimas Cotações</h2>
+        </div>
+        <button class="secondary-action" id="btnExportCsv" type="button">Exportar CSV</button>
       </div>
 
       <div id="historicoLista"></div>
@@ -75,9 +79,9 @@
     <footer>
       Uso interno GEOFIN • Ambiente de teste
     </footer>
-
   </div>
 
-  <script src="/script.js?v=10"></script>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <script src="/script.js?v=13"></script>
 </body>
 </html>
