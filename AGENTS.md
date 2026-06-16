@@ -62,3 +62,41 @@ git push
 - Não subir node_modules.
 - Não apagar cotacoes.json sem deixar [].
 - Não mudar regra de negócio sem avisar.
+# Regras do Projeto
+
+## Antes de qualquer alteração
+
+- Leia todos os arquivos relacionados.
+- Explique o diagnóstico antes de modificar código.
+- Não aplique mudanças automaticamente sem aprovação.
+
+## Regras de negócio
+
+- Origem sempre Serra - ES.
+- Destinos apenas ES e SP.
+- Não criar campos de cidade.
+- Não alterar fórmulas de cálculo sem autorização.
+- Não alterar regras da SAGIX ou TJB sem autorização.
+
+## Regras técnicas
+
+- Se alterar server.js, informar que precisa reiniciar npm start.
+- Se alterar arquivos do projeto, informar os comandos git necessários.
+- Não criar seções novas na interface sem solicitação.
+- Não adicionar funcionalidades experimentais sem aprovação.
+
+## Correção de bugs
+
+Quando encontrar um problema:
+
+1. Explicar a causa.
+2. Mostrar quais arquivos serão alterados.
+3. Mostrar o código proposto.
+4. Aguardar aprovação antes de aplicar.
+
+## Interface
+
+- Prioridade para visual corporativo.
+- Layout responsivo obrigatório.
+- Compatível com celular e desktop.
+- Não aumentar logos além do necessário.
