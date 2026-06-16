@@ -7,8 +7,14 @@ const elementos = {
   resultado: document.getElementById("resultado"),
   botaoCalcular: document.getElementById("btnCalcular"),
   historicoLista: document.getElementById("historicoLista"),
-  botaoExportarCsv: document.getElementById("btnExportCsv")
+  botaoExportarCsv: document.getElementById("btnExportCsv"),
+  botaoTema: document.getElementById("btnTema"),
+  botaoFiltrarSP: document.getElementById("btnFiltrarSP"),
+  botaoFiltrarES: document.getElementById("btnFiltrarES"),
+  botaoLimparFiltro: document.getElementById("btnLimparFiltro")
 };
+
+let filtroAtual = "";
 
 function moeda(valor) {
   return Number(valor).toLocaleString("pt-BR", {
@@ -45,6 +51,31 @@ function showToast(mensagem, timeout = 3000) {
     toast.classList.add("is-leaving");
     setTimeout(() => toast.remove(), 220);
   }, timeout);
+}
+
+function alternarTema() {
+  const html = document.documentElement;
+  const temaAtivo = html.classList.toggle("theme-light");
+  elementos.botaoTema.textContent = temaAtivo ? "Modo escuro" : "Modo claro";
+  showToast(`Tema alterado para ${temaAtivo ? "claro" : "escuro"}.`);
+}
+
+function aplicarFiltro(uf) {
+  filtroAtual = uf;
+  elementos.botaoFiltrarSP.classList.toggle("filter-active", uf === "SP");
+  elementos.botaoFiltrarES.classList.toggle("filter-active", uf === "ES");
+  elementos.botaoLimparFiltro.classList.remove("filter-active");
+  carregarHistorico();
+  showToast(`Filtro aplicado: ${uf}`);
+}
+
+function limparFiltro() {
+  filtroAtual = "";
+  elementos.botaoFiltrarSP.classList.remove("filter-active");
+  elementos.botaoFiltrarES.classList.remove("filter-active");
+  elementos.botaoLimparFiltro.classList.add("filter-active");
+  carregarHistorico();
+  showToast("Filtro removido.");
 }
 
 function baixarArquivo(conteudo, nomeArquivo, tipo) {
@@ -258,5 +289,9 @@ async function carregarHistorico() {
 
 elementos.botaoCalcular.addEventListener("click", calcular);
 elementos.botaoExportarCsv.addEventListener("click", exportarHistoricoCsv);
+elementos.botaoTema.addEventListener("click", alternarTema);
+elementos.botaoFiltrarSP.addEventListener("click", () => aplicarFiltro("SP"));
+elementos.botaoFiltrarES.addEventListener("click", () => aplicarFiltro("ES"));
+elementos.botaoLimparFiltro.addEventListener("click", limparFiltro);
 
 carregarHistorico();

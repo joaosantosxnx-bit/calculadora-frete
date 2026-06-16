@@ -72,8 +72,54 @@ body {
   text-align: right;
 }
 
-.tag {
-  display: inline-flex;
+  .theme-toggle {
+    margin-top: 12px;
+    background: #ffffff;
+    color: var(--green-dark);
+    border-color: var(--green);
+  }
+
+  .theme-light {
+    background: #f3f7f5;
+    color: #102018;
+  }
+
+  .theme-light .panel {
+    background: #ffffff;
+    border-color: #d1dbd6;
+  }
+
+  .theme-light .header,
+  .theme-light .result-panel,
+  .theme-light .history-panel {
+    box-shadow: 0 18px 42px rgba(40, 56, 43, 0.1);
+  }
+
+  .theme-light .secondary-action {
+    background: #ffffff;
+    color: var(--green-dark);
+  }
+
+  .theme-light button:not(:disabled) {
+    box-shadow: 0 8px 18px rgba(22, 163, 74, 0.12);
+  }
+
+  .theme-light .toast {
+    background: #14532d;
+  }
+
+  .history-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .filter-active {
+    background: var(--green);
+    color: #ffffff;
+    border-color: var(--green-dark);
+  }
   align-items: center;
   min-height: 28px;
   padding: 5px 10px;
