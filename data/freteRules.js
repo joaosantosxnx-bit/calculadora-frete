@@ -13,7 +13,6 @@ const regrasFrete = {
   ],
 
   SP_INTERIOR: [
-    { transportadora: "SAGIX", tipo: "sagix" },
     { transportadora: "TJB", tipo: "base", rkg: 66.0714, percentualNota: 0.1571, minimo: 0 },
     { transportadora: "KR TRANSPORTES", tipo: "base", rkg: 15.2341, percentualNota: 0.1547, minimo: 0 },
     { transportadora: "TODOBRASIL", tipo: "base", rkg: 1.0095, percentualNota: 0.0417, minimo: 0 }
