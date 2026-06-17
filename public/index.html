@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=17">
+  <link rel="stylesheet" href="/style.css?v=18">
 </head>
 <body>
   <div class="page">
@@ -38,6 +38,8 @@
           <label for="ufDestino">UF destino</label>
           <select id="ufDestino">
             <option value="">Selecione</option>
+            <option value="ES">Espírito Santo</option>
+            <option value="SP_CAPITAL">São Paulo - Capital</option>
             <option value="SP_INTERIOR">São Paulo - Interior</option>
             <option value="MG">Minas Gerais</option>
             <option value="RJ">Rio de Janeiro</option>
@@ -76,6 +78,8 @@
         <div class="history-actions" aria-label="Ações do histórico">
           <div class="filter-group" aria-label="Filtrar histórico por UF">
             <button class="filter-button is-active" data-filtro="" type="button">Todos</button>
+            <button class="filter-button" data-filtro="ES" type="button">ES</button>
+            <button class="filter-button" data-filtro="SP_CAPITAL" type="button">SP Cap.</button>
             <button class="filter-button" data-filtro="SP_INTERIOR" type="button">SP Int.</button>
             <button class="filter-button" data-filtro="MG" type="button">MG</button>
             <button class="filter-button" data-filtro="RJ" type="button">RJ</button>
@@ -94,6 +98,6 @@
   </div>
 
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script src="/script.js?v=17"></script>
+  <script src="/script.js?v=18"></script>
 </body>
 </html>

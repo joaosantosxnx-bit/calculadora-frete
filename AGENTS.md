@@ -37,6 +37,8 @@ Origem sempre:
 - Serra - ES
 
 Destinos permitidos:
+- ES
+- SP_CAPITAL
 - SP_INTERIOR
 - MG
 - RJ

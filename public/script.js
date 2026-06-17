@@ -29,6 +29,8 @@ function numeroFormatado(valor) {
 
 function nomeDestino(uf) {
   const nomes = {
+    ES: "Espírito Santo",
+    SP_CAPITAL: "São Paulo - Capital",
     SP_INTERIOR: "São Paulo - Interior",
     MG: "Minas Gerais",
     RJ: "Rio de Janeiro",

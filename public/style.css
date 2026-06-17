@@ -386,7 +386,7 @@ button:disabled {
 
 .filter-group {
   display: inline-grid;
-  grid-template-columns: repeat(5, minmax(52px, auto));
+  grid-template-columns: repeat(7, minmax(52px, auto));
   min-height: 40px;
   overflow: hidden;
   border: 1px solid #b9c7c0;
