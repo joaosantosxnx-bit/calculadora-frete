@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=16">
+  <link rel="stylesheet" href="/style.css?v=17">
 </head>
 <body>
   <div class="page">
@@ -38,15 +38,10 @@
           <label for="ufDestino">UF destino</label>
           <select id="ufDestino">
             <option value="">Selecione</option>
-            <option value="ES">Espírito Santo</option>
-            <option value="SP_CAPITAL">São Paulo - Capital</option>
             <option value="SP_INTERIOR">São Paulo - Interior</option>
             <option value="MG">Minas Gerais</option>
             <option value="RJ">Rio de Janeiro</option>
             <option value="BA">Bahia</option>
-            <option value="PR">Paraná</option>
-            <option value="SC">Santa Catarina</option>
-            <option value="AL">Alagoas</option>
           </select>
         </div>
 
@@ -81,15 +76,10 @@
         <div class="history-actions" aria-label="Ações do histórico">
           <div class="filter-group" aria-label="Filtrar histórico por UF">
             <button class="filter-button is-active" data-filtro="" type="button">Todos</button>
-            <button class="filter-button" data-filtro="ES" type="button">ES</button>
-            <button class="filter-button" data-filtro="SP_CAPITAL" type="button">SP Cap.</button>
             <button class="filter-button" data-filtro="SP_INTERIOR" type="button">SP Int.</button>
             <button class="filter-button" data-filtro="MG" type="button">MG</button>
             <button class="filter-button" data-filtro="RJ" type="button">RJ</button>
             <button class="filter-button" data-filtro="BA" type="button">BA</button>
-            <button class="filter-button" data-filtro="PR" type="button">PR</button>
-            <button class="filter-button" data-filtro="SC" type="button">SC</button>
-            <button class="filter-button" data-filtro="AL" type="button">AL</button>
           </div>
           <button class="secondary-action" id="btnExportCsv" type="button">Exportar CSV</button>
         </div>
@@ -104,6 +94,6 @@
   </div>
 
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script src="/script.js?v=16"></script>
+  <script src="/script.js?v=17"></script>
 </body>
 </html>

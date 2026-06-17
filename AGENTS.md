@@ -37,15 +37,10 @@ Origem sempre:
 - Serra - ES
 
 Destinos permitidos:
-- ES
-- SP_CAPITAL
 - SP_INTERIOR
 - MG
 - RJ
 - BA
-- PR
-- SC
-- AL
 
 Não usar campo de cidade.
 
