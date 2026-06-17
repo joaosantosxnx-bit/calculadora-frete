@@ -348,6 +348,10 @@ button:disabled {
   font-weight: 800;
 }
 
+.best-row {
+  background: var(--green-soft);
+}
+
 .value {
   color: var(--green-dark);
   font-size: 18px;
@@ -382,7 +386,7 @@ button:disabled {
 
 .filter-group {
   display: inline-grid;
-  grid-template-columns: repeat(3, minmax(44px, auto));
+  grid-template-columns: repeat(10, minmax(42px, auto));
   min-height: 40px;
   overflow: hidden;
   border: 1px solid #b9c7c0;
@@ -558,7 +562,7 @@ footer {
 
   .filter-group {
     width: 100%;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .history-title .secondary-action,

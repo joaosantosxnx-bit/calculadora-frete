@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const regrasFrete = require("./data/freteRules");
 
 const app = express();
 
@@ -12,22 +13,16 @@ app.use(express.static("public"));
 const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
 
 const ORIGEM_FIXA = "Serra - ES";
-const DESTINOS_PERMITIDOS = ["ES", "SP"];
-const DIVISOR_FINAL_COTACAO = 0.82;
+const DESTINOS_PERMITIDOS = Object.keys(regrasFrete);
 
 // SAGIX
 const SAGIX_PERCENTUAL_NOTA = 0.05;
 const SAGIX_FRETE_MINIMO = 1250;
 const ICMS_POR_UF = {
   ES: 0.07,
-  SP: 0.12
+  SP_CAPITAL: 0.12,
+  SP_INTERIOR: 0.12
 };
-
-// TJB provisório
-const TJB_TAXA_FIXA = 75.04;
-const TJB_VALOR_KG = 0.69678;
-const TJB_PERCENTUAL_NOTA = 0.01;
-const TJB_DESCARGA = 400;
 
 function arredondarMoeda(valor) {
   return Number(valor.toFixed(2));
@@ -58,12 +53,74 @@ function numeroValido(valor) {
   return typeof valor === "number" && Number.isFinite(valor) && valor > 0;
 }
 
+function calcularSagix(destino, valorNota) {
+  const freteBase = valorNota * SAGIX_PERCENTUAL_NOTA;
+  const aliquotaIcms = ICMS_POR_UF[destino];
+  const icms = freteBase * aliquotaIcms;
+  const valorFinal = Math.max(freteBase + icms, SAGIX_FRETE_MINIMO);
+
+  return {
+    valorFinal,
+    detalhes: {
+      freteBase,
+      icms
+    }
+  };
+}
+
+function calcularRegraBase(regra, valorNota, peso) {
+  const valorPorKg = peso * regra.rkg;
+  const valorPorNota = valorNota * regra.percentualNota;
+  const minimo = regra.minimo || 0;
+  const valorFinal = Math.max(valorPorKg, valorPorNota, minimo);
+
+  return {
+    valorFinal,
+    detalhes: {
+      valorPorKg,
+      valorPorNota,
+      minimo
+    }
+  };
+}
+
+function calcularTransportadora(regra, destino, valorNota, peso) {
+  if (regra.tipo === "sagix") {
+    if (!Object.prototype.hasOwnProperty.call(ICMS_POR_UF, destino)) {
+      return null;
+    }
+
+    const calculo = calcularSagix(destino, valorNota);
+
+    return {
+      transportadora: regra.transportadora,
+      tipo: regra.tipo,
+      valor: arredondarMoeda(calculo.valorFinal)
+    };
+  }
+
+  if (regra.tipo === "base") {
+    const calculo = calcularRegraBase(regra, valorNota, peso);
+
+    return {
+      transportadora: regra.transportadora,
+      tipo: regra.tipo,
+      valor: arredondarMoeda(calculo.valorFinal)
+    };
+  }
+
+  return null;
+}
+
 app.post("/calcular", (req, res) => {
   const { destino, valorNota, peso } = req.body;
+  const regrasDestino = regrasFrete[destino];
 
   if (
     typeof destino !== "string" ||
     !DESTINOS_PERMITIDOS.includes(destino) ||
+    !Array.isArray(regrasDestino) ||
+    regrasDestino.length === 0 ||
     !numeroValido(valorNota) ||
     !numeroValido(peso)
   ) {
@@ -72,29 +129,25 @@ app.post("/calcular", (req, res) => {
     });
   }
 
-  const freteBaseSagix = valorNota * SAGIX_PERCENTUAL_NOTA;
-  const icmsSagix = freteBaseSagix * ICMS_POR_UF[destino];
-  const valorSagixCalculado = freteBaseSagix + icmsSagix;
-  const valorSagixAntesDivisor = Math.max(valorSagixCalculado, SAGIX_FRETE_MINIMO);
-  const valorSagix = valorSagixAntesDivisor / DIVISOR_FINAL_COTACAO;
+  const transportadoras = regrasDestino
+    .map((regra) => calcularTransportadora(regra, destino, valorNota, peso))
+    .filter(Boolean)
+    .sort((a, b) => a.valor - b.valor);
 
-  const valorTjbAntesDivisor =
-    TJB_TAXA_FIXA +
-    peso * TJB_VALOR_KG +
-    valorNota * TJB_PERCENTUAL_NOTA +
-    TJB_DESCARGA;
-  const valorTjb = valorTjbAntesDivisor / DIVISOR_FINAL_COTACAO;
+  if (transportadoras.length === 0) {
+    return res.status(400).json({
+      erro: "Nenhuma transportadora disponível para o destino informado."
+    });
+  }
 
-  const melhorOpcao = valorSagix <= valorTjb ? "SAGIX" : "TJB";
-  const economia = Math.abs(valorSagix - valorTjb);
+  const melhorCotacao = transportadoras[0];
+  const maiorCotacao = transportadoras[transportadoras.length - 1];
+  const economia = maiorCotacao.valor - melhorCotacao.valor;
 
   const resposta = {
-    sagixAtende: true,
-    freteBaseSagix: arredondarMoeda(freteBaseSagix),
-    icmsSagix: arredondarMoeda(icmsSagix),
-    valorSagix: arredondarMoeda(valorSagix),
-    valorTjb: arredondarMoeda(valorTjb),
-    melhorOpcao,
+    transportadoras,
+    melhorOpcao: melhorCotacao.transportadora,
+    melhorValor: melhorCotacao.valor,
     economia: arredondarMoeda(economia)
   };
 
@@ -104,9 +157,9 @@ app.post("/calcular", (req, res) => {
     destino,
     valorNota: arredondarMoeda(valorNota),
     peso: arredondarMoeda(peso),
-    valorSagix: resposta.valorSagix,
-    valorTjb: resposta.valorTjb,
-    melhorOpcao,
+    transportadoras,
+    melhorOpcao: resposta.melhorOpcao,
+    melhorValor: resposta.melhorValor,
     economia: resposta.economia
   });
 

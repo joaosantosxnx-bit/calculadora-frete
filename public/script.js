@@ -30,7 +30,14 @@ function numeroFormatado(valor) {
 function nomeDestino(uf) {
   const nomes = {
     ES: "Espírito Santo",
-    SP: "São Paulo"
+    SP_CAPITAL: "São Paulo - Capital",
+    SP_INTERIOR: "São Paulo - Interior",
+    MG: "Minas Gerais",
+    RJ: "Rio de Janeiro",
+    BA: "Bahia",
+    PR: "Paraná",
+    SC: "Santa Catarina",
+    AL: "Alagoas"
   };
 
   return nomes[uf] || uf;
@@ -111,8 +118,17 @@ async function exportarHistoricoCsv() {
       return;
     }
 
-    const colunas = ["data", "origem", "destino", "valorNota", "peso", "valorSagix", "valorTjb", "melhorOpcao", "economia"];
-    const linhas = historico.map((item) => colunas.map((coluna) => escaparCsv(item[coluna])).join(";"));
+    const colunas = ["data", "origem", "destino", "valorNota", "peso", "melhorOpcao", "melhorValor", "economia", "transportadoras"];
+    const linhas = historico.map((item) => {
+      const linha = {
+        ...item,
+        transportadoras: Array.isArray(item.transportadoras)
+          ? item.transportadoras.map((transportadora) => `${transportadora.transportadora}: ${moeda(transportadora.valor)}`).join(" | ")
+          : ""
+      };
+
+      return colunas.map((coluna) => escaparCsv(linha[coluna])).join(";");
+    });
     const csv = `${colunas.join(";")}\n${linhas.join("\n")}`;
     const data = new Date().toISOString().slice(0, 10);
 
@@ -165,8 +181,7 @@ function montarResultado(dados, entrada) {
     `Valor da nota: ${moeda(entrada.valorNota)}`,
     `Peso: ${numeroFormatado(entrada.peso)} kg`,
     `Melhor opção: ${dados.melhorOpcao}`,
-    `SAGIX: ${moeda(dados.valorSagix)}`,
-    `TJB: ${moeda(dados.valorTjb)}`,
+    ...dados.transportadoras.map((item) => `${item.transportadora}: ${moeda(item.valor)}`),
     `Economia estimada: ${moeda(dados.economia)}`
   ].join("\n");
 
@@ -189,7 +204,7 @@ function montarResultado(dados, entrada) {
     <div class="winner">
       <span>Melhor opção</span>
       <h2>${dados.melhorOpcao}</h2>
-      <p>Economia estimada: <strong>${moeda(dados.economia)}</strong></p>
+      <p>Valor estimado: <strong>${moeda(dados.melhorValor)}</strong></p>
     </div>
 
     <div class="comparison" role="table" aria-label="Comparativo de frete">
@@ -197,14 +212,12 @@ function montarResultado(dados, entrada) {
         <div role="columnheader">Transportadora</div>
         <div role="columnheader">Valor</div>
       </div>
-      <div class="comparison-row" role="row">
-        <div role="cell"><strong>SAGIX</strong></div>
-        <div class="value" role="cell">${moeda(dados.valorSagix)}</div>
-      </div>
-      <div class="comparison-row" role="row">
-        <div role="cell"><strong>TJB</strong></div>
-        <div class="value" role="cell">${moeda(dados.valorTjb)}</div>
-      </div>
+      ${dados.transportadoras.map((item) => `
+        <div class="comparison-row ${item.transportadora === dados.melhorOpcao ? "best-row" : ""}" role="row">
+          <div role="cell"><strong>${item.transportadora}</strong></div>
+          <div class="value" role="cell">${moeda(item.valor)}</div>
+        </div>
+      `).join("")}
     </div>
 
     <div class="result-actions">

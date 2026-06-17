@@ -1,106 +1,98 @@
-# Projeto: Calculadora de Frete GEOFIN
+# Calculadora de Frete GEOFIN
 
-Sistema web em Node.js + Express para simulação de frete interno.
+## Fonte de regras de frete
 
-## Contexto
-- Origem sempre fixa: Serra - ES.
-- Destinos permitidos: Espírito Santo e São Paulo.
-- Projeto publicado no Render.
-- Frontend fica na pasta public.
-- Backend fica no server.js.
-- Histórico atual fica em cotacoes.json.
-- É uma versão beta, então manter o selo "VERSÃO BETA".
+A planilha original de fretes NÃO estará disponível para análise no Codex.
 
-## Regras de cálculo
-### SAGIX
-- Frete base = 5% do valor da nota fiscal.
+A base resumida da planilha deve ficar em:
+
+data/freteRules.js
+
+O Codex deve usar esse arquivo como fonte principal para regras de transportadoras, estados e cálculo.
+
+## Regras de comportamento
+
+- Leia este AGENTS.md antes de qualquer alteração.
+- Pode executar comandos no terminal quando necessário.
+- Pode alterar arquivos somente quando o usuário autorizar claramente.
+- Antes de alterar server.js, explique quais mudanças serão feitas.
+- Não invente novas fórmulas.
+- Não altere layout sem autorização.
+- Não crie campos de cidade.
+- Não crie seções extras como "Atualizações recentes".
+- Não mexa em node_modules.
+
+## Estrutura do projeto
+
+- server.js: API Node.js/Express.
+- public/index.html: tela principal.
+- public/style.css: visual responsivo.
+- public/script.js: integração frontend com backend.
+- data/freteRules.js: base de regras de frete.
+- cotacoes.json: histórico beta local.
+
+## Regras fixas
+
+Origem sempre:
+- Serra - ES
+
+Destinos permitidos:
+- ES
+- SP_CAPITAL
+- SP_INTERIOR
+- MG
+- RJ
+- BA
+- PR
+- SC
+- AL
+
+Não usar campo de cidade.
+
+## Regra SAGIX
+
+- 5% sobre valor da nota.
 - ICMS ES = 7%.
 - ICMS SP = 12%.
-- Valor SAGIX = frete base + ICMS.
-- Frete mínimo SAGIX = R$ 1.250,00.
+- Frete mínimo = R$ 1.250,00.
+- SAGIX só deve ser usada em destinos onde estiver listada em data/freteRules.js.
 
-### TJB
-- Fórmula atual provisória:
-  - taxa fixa: 75.04
-  - valor por kg: 0.69678
-  - percentual nota: 1%
-  - descarga: 400
-- Não mostrar descarga separada na tela.
+## Regra tipo base
 
-### Divisor final
-- Depois de calcular o valor da SAGIX e da TJB, o valor final de cada cotação deve ser dividido por 0,82.
-- A comparação de melhor opção deve usar os valores finais já divididos por 0,82.
+Para regras do tipo "base":
 
-## Regras visuais
-- Visual precisa parecer sistema corporativo.
-- Evitar aparência amadora.
-- Layout precisa funcionar bem no celular.
-- Usar as logos em public/assets.
-- Não usar caminhão no título.
-- Manter interface limpa e profissional.
-- Preferir verde, branco e tons escuros.
-- Não deixar campos de cidade. Usar somente UF destino.
+- valorPorKg = peso * rkg
+- valorPorNota = valorNota * percentualNota
+- valorFinal = maior entre valorPorKg, valorPorNota e minimo
 
-## Estrutura
-- public/index.html: tela principal.
-- public/style.css: visual.
-- public/script.js: comunicação com API.
-- server.js: API Node.js.
-- cotacoes.json: histórico local.
+Sempre usar o maior valor para evitar cotação abaixo.
 
-## Como rodar
+## Melhor opção
+
+- Calcular todas as transportadoras disponíveis para o destino.
+- Mostrar todas no resultado.
+- Escolher como melhor opção a transportadora com menor valor final.
+
+## Processo esperado
+
+Quando o usuário pedir para implementar:
+
+1. Criar ou ajustar data/freteRules.js.
+2. Ajustar server.js para ler data/freteRules.js.
+3. Ajustar public/index.html para incluir os destinos.
+4. Ajustar public/script.js para renderizar todas as transportadoras retornadas pela API.
+5. Preservar o layout atual.
+6. Testar com npm start.
+7. Se funcionar, orientar git add, commit e push.
+
+## Comandos permitidos
+
+Pode executar:
+
 npm start
-
-Abrir:
-http://localhost:3000
-
-## Deploy
-- GitHub: calculadora-frete.
-- Hospedagem: Render.
-- Para atualizar online:
+git status
 git add .
 git commit -m "mensagem"
 git push
 
-## Cuidado
-- Não subir node_modules.
-- Não apagar cotacoes.json sem deixar [].
-- Não mudar regra de negócio sem avisar.
-# Regras do Projeto
-
-## Antes de qualquer alteração
-
-- Leia todos os arquivos relacionados.
-- Explique o diagnóstico antes de modificar código.
-- Não aplique mudanças automaticamente sem aprovação.
-
-## Regras de negócio
-
-- Origem sempre Serra - ES.
-- Destinos apenas ES e SP.
-- Não criar campos de cidade.
-- Não alterar fórmulas de cálculo sem autorização.
-- Não alterar regras da SAGIX ou TJB sem autorização.
-
-## Regras técnicas
-
-- Se alterar server.js, informar que precisa reiniciar npm start.
-- Se alterar arquivos do projeto, informar os comandos git necessários.
-- Não criar seções novas na interface sem solicitação.
-- Não adicionar funcionalidades experimentais sem aprovação.
-
-## Correção de bugs
-
-Quando encontrar um problema:
-
-1. Explicar a causa.
-2. Mostrar quais arquivos serão alterados.
-3. Mostrar o código proposto.
-4. Aguardar aprovação antes de aplicar.
-
-## Interface
-
-- Prioridade para visual corporativo.
-- Layout responsivo obrigatório.
-- Compatível com celular e desktop.
-- Não aumentar logos além do necessário.
+Não executar comandos destrutivos sem autorização.
