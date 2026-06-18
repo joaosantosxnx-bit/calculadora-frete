@@ -204,6 +204,10 @@ function montarResultado(dados, entrada) {
       <p>Valor estimado: <strong>${moeda(dados.melhorValor)}</strong></p>
     </div>
 
+    ${(dados.avisos || []).map((aviso) => `
+      <p class="error-text">${aviso.mensagem}</p>
+    `).join("")}
+
     <div class="comparison" role="table" aria-label="Comparativo de frete">
       <div class="comparison-row comparison-head" role="row">
         <div role="columnheader">Transportadora</div>
