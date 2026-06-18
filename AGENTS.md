@@ -1,95 +1,130 @@
-# Calculadora de Frete GEOFIN
+# REGRAS DE NEGÓCIO - CALCULADORA DE FRETE GEOFIN
 
-## Fonte de regras de frete
+## IMPORTANTE
 
-A planilha original de fretes NÃO estará disponível para análise no Codex.
+Antes de alterar qualquer arquivo:
 
-A base resumida da planilha deve ficar em:
+1. Explicar o problema encontrado.
+2. Explicar quais arquivos serão alterados.
+3. Explicar a solução proposta.
 
-data/freteRules.js
+Não executar comandos destrutivos.
 
-O Codex deve usar esse arquivo como fonte principal para regras de transportadoras, estados e cálculo.
+---
 
-## Regras de comportamento
+## ESTADOS DISPONÍVEIS
 
-- Leia este AGENTS.md antes de qualquer alteração.
-- Pode executar comandos no terminal quando necessário.
-- Pode alterar arquivos somente quando o usuário autorizar claramente.
-- Antes de alterar server.js, explique quais mudanças serão feitas.
-- Não invente novas fórmulas.
-- Não altere layout sem autorização.
-- Não crie campos de cidade.
-- Não crie seções extras como "Atualizações recentes".
-- Não mexa em node_modules.
+Estados atualmente utilizados no sistema:
 
-## Estrutura do projeto
+* ES
+* SP Cap.
+* SP Int.
+* MG
+* RJ
+* BA
 
-- server.js: API Node.js/Express.
-- public/index.html: tela principal.
-- public/style.css: visual responsivo.
-- public/script.js: integração frontend com backend.
-- data/freteRules.js: base de regras de frete.
-- cotacoes.json: histórico beta local.
+Não adicionar novos estados sem autorização.
 
-## Regras fixas
+---
 
-Origem sempre:
-- Serra - ES
+## SAGIX
 
-Destinos permitidos:
-- ES
-- SP_CAPITAL
-- SP_INTERIOR
-- MG
-- RJ
-- BA
+A SAGIX atende somente:
 
-Não usar campo de cidade.
+* ES
+* SP Cap.
 
-## Regra SAGIX
+A SAGIX NÃO atende:
 
-- 5% sobre valor da nota.
-- ICMS ES = 7%.
-- ICMS SP = 12%.
-- Frete mínimo = R$ 1.250,00.
-- SAGIX só deve ser usada em destinos onde estiver listada em data/freteRules.js.
+* SP Int.
+* MG
+* RJ
+* BA
 
-## Regra tipo base
+### Fórmula
 
-Para regras do tipo "base":
+freteBase = valorNota × 5%
 
-- valorPorKg = peso * rkg
-- valorPorNota = valorNota * percentualNota
-- valorFinal = maior entre valorPorKg, valorPorNota e minimo
+ICMS:
 
-Sempre usar o maior valor para evitar cotação abaixo.
+* ES = 7%
+* SP Cap. = 12%
 
-## Melhor opção
+valorFinal = freteBase + ICMS
 
-- Calcular todas as transportadoras disponíveis para o destino.
-- Mostrar todas no resultado.
-- Escolher como melhor opção a transportadora com menor valor final.
+### Regra de Valor Mínimo
 
-## Processo esperado
+Valor mínimo operacional aceito:
 
-Quando o usuário pedir para implementar:
+R$ 1.250,00
 
-1. Criar ou ajustar data/freteRules.js.
-2. Ajustar server.js para ler data/freteRules.js.
-3. Ajustar public/index.html para incluir os destinos.
-4. Ajustar public/script.js para renderizar todas as transportadoras retornadas pela API.
-5. Preservar o layout atual.
-6. Testar com npm start.
-7. Se funcionar, orientar git add, commit e push.
+IMPORTANTE:
 
-## Comandos permitidos
+Se o valor calculado for menor que R$ 1.250,00:
 
-Pode executar:
+NÃO ajustar para R$ 1.250,00.
 
-npm start
-git status
-git add .
-git commit -m "mensagem"
-git push
+NÃO exibir cotação da SAGIX.
 
-Não executar comandos destrutivos sem autorização.
+Exibir mensagem:
+
+"SAGIX não atende esta operação, pois o valor calculado ficou abaixo do valor mínimo operacional aceito de R$ 1.250,00."
+
+---
+
+## TJB
+
+A TJB atende:
+
+* ES
+* SP Cap.
+* SP Int.
+* MG
+* RJ
+* BA
+
+IMPORTANTE:
+
+Não utilizar:
+
+* média histórica
+* R$/kg histórico
+* valores médios da planilha
+* cotações históricas
+
+O erro anterior gerou valor de R$ 44.598,19 utilizando R$/kg histórico.
+
+Isso está incorreto.
+
+A TJB deve utilizar exclusivamente a lógica oficial implementada no backend.
+
+Não substituir a regra da TJB por médias ou cálculos históricos.
+
+---
+
+## LAYOUT
+
+Não alterar:
+
+* layout atual
+* responsividade atual
+* identidade visual atual
+
+Não criar:
+
+* campo cidade
+* seção "Atualizações Recentes"
+* novas abas
+* novos componentes visuais
+
+---
+
+## COMANDOS PERMITIDOS
+
+* npm start
+* git status
+* git add .
+* git commit
+* git push
+
+Executar somente quando autorizado.
