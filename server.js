@@ -65,8 +65,9 @@ function calcularSagix(destino, valorNota) {
   const aliquotaIcms = ICMS_POR_UF[destino];
   const icms = freteBase * aliquotaIcms;
   const valorCalculado = freteBase + icms;
+  const valorFinal = valorCalculado / DIVISOR_FINAL_COTACAO;
 
-  if (valorCalculado < SAGIX_FRETE_MINIMO) {
+  if (valorFinal < SAGIX_FRETE_MINIMO) {
     return {
       atende: false,
       mensagem: SAGIX_MENSAGEM_MINIMO,
@@ -80,7 +81,7 @@ function calcularSagix(destino, valorNota) {
 
   return {
     atende: true,
-    valorFinal: valorCalculado / DIVISOR_FINAL_COTACAO,
+    valorFinal,
     detalhes: {
       freteBase,
       icms
