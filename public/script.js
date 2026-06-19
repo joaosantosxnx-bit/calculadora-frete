@@ -13,6 +13,7 @@ const elementos = {
 };
 
 let filtroAtual = "";
+let valorNotaDigitado = "";
 
 function moeda(valor) {
   return Number(valor).toLocaleString("pt-BR", {
@@ -25,6 +26,44 @@ function numeroFormatado(valor) {
   return Number(valor).toLocaleString("pt-BR", {
     maximumFractionDigits: 2
   });
+}
+
+function formatarNumeroBR(valor) {
+  return Number(valor).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function textoParaNumeroBR(texto) {
+  const limpo = String(texto || "").replace(/[^\d.,]/g, "");
+
+  if (!limpo) return 0;
+
+  if (limpo.includes(",")) {
+    return Number(limpo.replace(/\./g, "").replace(",", "."));
+  }
+
+  return Number(limpo.replace(/\./g, ""));
+}
+
+function aplicarMascaraValorNota(evento) {
+  const inputType = evento.inputType || "";
+  const caractere = evento.data || "";
+
+  if (inputType === "deleteContentBackward") {
+    valorNotaDigitado = valorNotaDigitado.slice(0, -1);
+  } else if (inputType === "insertFromPaste") {
+    const valorColado = textoParaNumeroBR(elementos.valorNota.value);
+    valorNotaDigitado = valorColado > 0 ? String(Math.round(valorColado)) : "";
+  } else if (/^\d$/.test(caractere)) {
+    valorNotaDigitado += caractere;
+  } else {
+    const somenteDigitos = elementos.valorNota.value.replace(/\D/g, "");
+    valorNotaDigitado = somenteDigitos;
+  }
+
+  elementos.valorNota.value = valorNotaDigitado ? formatarNumeroBR(Number(valorNotaDigitado)) : "";
 }
 
 function nomeDestino(uf) {
@@ -158,7 +197,7 @@ function exibirMensagem(titulo, texto, tipo = "empty") {
 function dadosDoFormulario() {
   return {
     destino: elementos.ufDestino.value,
-    valorNota: Number(elementos.valorNota.value),
+    valorNota: textoParaNumeroBR(elementos.valorNota.value),
     peso: Number(elementos.peso.value)
   };
 }
@@ -316,6 +355,7 @@ async function carregarHistorico() {
 }
 
 elementos.botaoCalcular.addEventListener("click", calcular);
+elementos.valorNota.addEventListener("input", aplicarMascaraValorNota);
 elementos.botaoExportarCsv.addEventListener("click", exportarHistoricoCsv);
 elementos.botaoTema.addEventListener("click", alternarTema);
 elementos.botoesFiltro.forEach((botao) => {
