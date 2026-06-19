@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const { Pool } = require("pg");
 const regrasFrete = require("./data/freteRules");
 
 const app = express();
@@ -11,6 +12,13 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
+const DATABASE_URL = process.env.DATABASE_URL;
+const pool = DATABASE_URL
+  ? new Pool({
+      connectionString: DATABASE_URL,
+      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+    })
+  : null;
 
 const ORIGEM_FIXA = "Serra - ES";
 const DESTINOS_PERMITIDOS = Object.keys(regrasFrete);
@@ -54,6 +62,104 @@ function salvarHistorico(cotacao) {
   const historicoLimitado = [cotacao, ...historico].slice(0, 20);
 
   fs.writeFileSync(HISTORICO_PATH, JSON.stringify(historicoLimitado, null, 2));
+}
+
+async function inicializarBanco() {
+  if (!pool) return;
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS cotacoes (
+      id SERIAL PRIMARY KEY,
+      criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      data TEXT NOT NULL,
+      origem TEXT NOT NULL,
+      destino TEXT NOT NULL,
+      valor_nota NUMERIC(12, 2) NOT NULL,
+      peso NUMERIC(12, 2) NOT NULL,
+      transportadoras JSONB NOT NULL,
+      avisos JSONB NOT NULL,
+      melhor_opcao TEXT NOT NULL,
+      melhor_valor NUMERIC(12, 2) NOT NULL,
+      economia NUMERIC(12, 2) NOT NULL
+    )
+  `);
+}
+
+function normalizarCotacaoBanco(row) {
+  return {
+    id: row.id,
+    data: row.data,
+    origem: row.origem,
+    destino: row.destino,
+    valorNota: Number(row.valor_nota),
+    peso: Number(row.peso),
+    transportadoras: row.transportadoras,
+    avisos: row.avisos,
+    melhorOpcao: row.melhor_opcao,
+    melhorValor: Number(row.melhor_valor),
+    economia: Number(row.economia)
+  };
+}
+
+async function salvarCotacao(cotacao) {
+  if (!pool) {
+    salvarHistorico(cotacao);
+    return;
+  }
+
+  await pool.query(
+    `
+      INSERT INTO cotacoes (
+        data,
+        origem,
+        destino,
+        valor_nota,
+        peso,
+        transportadoras,
+        avisos,
+        melhor_opcao,
+        melhor_valor,
+        economia
+      )
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)
+    `,
+    [
+      cotacao.data,
+      cotacao.origem,
+      cotacao.destino,
+      cotacao.valorNota,
+      cotacao.peso,
+      JSON.stringify(cotacao.transportadoras),
+      JSON.stringify(cotacao.avisos),
+      cotacao.melhorOpcao,
+      cotacao.melhorValor,
+      cotacao.economia
+    ]
+  );
+}
+
+async function listarCotacoes() {
+  if (!pool) return lerHistorico();
+
+  const resultado = await pool.query(`
+    SELECT
+      id,
+      data,
+      origem,
+      destino,
+      valor_nota,
+      peso,
+      transportadoras,
+      avisos,
+      melhor_opcao,
+      melhor_valor,
+      economia
+    FROM cotacoes
+    ORDER BY criado_em DESC, id DESC
+    LIMIT 20
+  `);
+
+  return resultado.rows.map(normalizarCotacaoBanco);
 }
 
 function numeroValido(valor) {
@@ -189,7 +295,7 @@ function calcularTransportadoras(regrasDestino, destino, valorNota, peso) {
   };
 }
 
-app.post("/calcular", (req, res) => {
+app.post("/calcular", async (req, res) => {
   const { destino, valorNota, peso } = req.body;
   const regrasDestino = regrasFrete[destino];
 
@@ -226,7 +332,7 @@ app.post("/calcular", (req, res) => {
     economia: arredondarMoeda(economia)
   };
 
-  salvarHistorico({
+  const cotacao = {
     data: new Date().toLocaleString("pt-BR"),
     origem: ORIGEM_FIXA,
     destino,
@@ -237,17 +343,41 @@ app.post("/calcular", (req, res) => {
     melhorOpcao: resposta.melhorOpcao,
     melhorValor: resposta.melhorValor,
     economia: resposta.economia
-  });
+  };
+
+  try {
+    await salvarCotacao(cotacao);
+  } catch (erro) {
+    console.error("Erro ao salvar cotação:", erro);
+    return res.status(500).json({
+      erro: "Cotação calculada, mas não foi possível salvar no histórico."
+    });
+  }
 
   return res.json(resposta);
 });
 
-app.get("/historico", (req, res) => {
-  return res.json(lerHistorico());
+app.get("/historico", async (req, res) => {
+  try {
+    const historico = await listarCotacoes();
+    return res.json(historico);
+  } catch (erro) {
+    console.error("Erro ao carregar histórico:", erro);
+    return res.status(500).json({
+      erro: "Não foi possível carregar o histórico."
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+inicializarBanco()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
+    });
+  })
+  .catch((erro) => {
+    console.error("Erro ao inicializar banco de dados:", erro);
+    process.exit(1);
+  });
