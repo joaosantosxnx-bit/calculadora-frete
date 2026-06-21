@@ -23,7 +23,7 @@ const pool = DATABASE_URL
 const ORIGEM_FIXA = "Serra - ES";
 const DESTINOS_PERMITIDOS = Object.keys(regrasFrete);
 const DIVISOR_FINAL_COTACAO = 0.82;
-const SAGIX_MENSAGEM_MINIMO = "SAGIX não atende esta operação, pois o valor calculado ficou abaixo do valor mínimo operacional aceito de R$ 1.250,00.";
+const SAGIX_MENSAGEM_MINIMO = "SAGIX não atende esta operação, pois o valor da nota fiscal ficou abaixo do valor mínimo operacional aceito de R$ 1.250,00.";
 
 // SAGIX
 const SAGIX_PERCENTUAL_NOTA = 0.05;
@@ -173,7 +173,7 @@ function calcularSagix(destino, valorNota) {
   const valorCalculado = freteBase + icms;
   const valorFinal = valorCalculado / DIVISOR_FINAL_COTACAO;
 
-  if (valorFinal < SAGIX_FRETE_MINIMO) {
+  if (valorNota < SAGIX_FRETE_MINIMO) {
     return {
       atende: false,
       mensagem: SAGIX_MENSAGEM_MINIMO,
