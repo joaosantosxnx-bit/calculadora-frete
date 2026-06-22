@@ -9,9 +9,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
 const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
+const ACESSOS_PATH = path.join(__dirname, "acessos.json");
 const DATABASE_URL = process.env.DATABASE_URL;
 const pool = DATABASE_URL
   ? new Pool({
@@ -64,6 +64,27 @@ function salvarHistorico(cotacao) {
   fs.writeFileSync(HISTORICO_PATH, JSON.stringify(historicoLimitado, null, 2));
 }
 
+function lerAcessosLocais() {
+  if (!fs.existsSync(ACESSOS_PATH)) {
+    fs.writeFileSync(ACESSOS_PATH, "[]");
+  }
+
+  try {
+    const conteudo = fs.readFileSync(ACESSOS_PATH, "utf8");
+    const acessos = JSON.parse(conteudo);
+    return Array.isArray(acessos) ? acessos : [];
+  } catch (erro) {
+    return [];
+  }
+}
+
+function salvarAcessoLocal(acesso) {
+  const acessos = lerAcessosLocais();
+  const acessosLimitados = [acesso, ...acessos].slice(0, 200);
+
+  fs.writeFileSync(ACESSOS_PATH, JSON.stringify(acessosLimitados, null, 2));
+}
+
 async function inicializarBanco() {
   if (!pool) return;
 
@@ -81,6 +102,21 @@ async function inicializarBanco() {
       melhor_opcao TEXT NOT NULL,
       melhor_valor NUMERIC(12, 2) NOT NULL,
       economia NUMERIC(12, 2) NOT NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS acessos (
+      id SERIAL PRIMARY KEY,
+      criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      data TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      metodo TEXT NOT NULL,
+      rota TEXT NOT NULL,
+      ip TEXT NOT NULL,
+      dispositivo TEXT NOT NULL,
+      user_agent TEXT,
+      referer TEXT
     )
   `);
 }
@@ -160,6 +196,74 @@ async function listarCotacoes() {
   `);
 
   return resultado.rows.map(normalizarCotacaoBanco);
+}
+
+function obterIp(req) {
+  const encaminhado = req.headers["x-forwarded-for"];
+  const ip = Array.isArray(encaminhado)
+    ? encaminhado[0]
+    : encaminhado || req.socket.remoteAddress || req.ip || "";
+
+  return ip.split(",")[0].trim().replace(/^::ffff:/, "") || "desconhecido";
+}
+
+function obterDispositivo(userAgent) {
+  if (/mobile|android|iphone|ipad|ipod/i.test(userAgent)) return "celular";
+  return "computador";
+}
+
+function criarAcesso(req, tipo) {
+  const userAgent = req.headers["user-agent"] || "";
+
+  return {
+    data: new Date().toLocaleString("pt-BR"),
+    tipo,
+    metodo: req.method,
+    rota: req.originalUrl || req.url,
+    ip: obterIp(req),
+    dispositivo: obterDispositivo(userAgent),
+    userAgent,
+    referer: req.headers.referer || ""
+  };
+}
+
+async function salvarAcesso(acesso) {
+  if (!pool) {
+    salvarAcessoLocal(acesso);
+    return;
+  }
+
+  await pool.query(
+    `
+      INSERT INTO acessos (
+        data,
+        tipo,
+        metodo,
+        rota,
+        ip,
+        dispositivo,
+        user_agent,
+        referer
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `,
+    [
+      acesso.data,
+      acesso.tipo,
+      acesso.metodo,
+      acesso.rota,
+      acesso.ip,
+      acesso.dispositivo,
+      acesso.userAgent,
+      acesso.referer
+    ]
+  );
+}
+
+function registrarAcesso(req, tipo) {
+  return salvarAcesso(criarAcesso(req, tipo)).catch((erro) => {
+    console.error("Erro ao registrar acesso:", erro);
+  });
 }
 
 function numeroValido(valor) {
@@ -295,7 +399,16 @@ function calcularTransportadoras(regrasDestino, destino, valorNota, peso) {
   };
 }
 
+app.get("/", (req, res, next) => {
+  registrarAcesso(req, "pagina_inicial");
+  next();
+});
+
+app.use(express.static("public"));
+
 app.post("/calcular", async (req, res) => {
+  registrarAcesso(req, "calculo");
+
   const { destino, valorNota, peso } = req.body;
   const regrasDestino = regrasFrete[destino];
 
@@ -358,6 +471,8 @@ app.post("/calcular", async (req, res) => {
 });
 
 app.get("/historico", async (req, res) => {
+  registrarAcesso(req, "historico");
+
   try {
     const historico = await listarCotacoes();
     return res.json(historico);

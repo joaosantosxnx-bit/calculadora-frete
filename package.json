@@ -4,7 +4,8 @@
   "description": "Calculadora de frete GEOFIN - versão beta",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "acessos": "node scripts/listar-acessos.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
