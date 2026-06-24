@@ -13,7 +13,6 @@ const elementos = {
 };
 
 let filtroAtual = "";
-let valorNotaDigitado = "";
 
 function moeda(valor) {
   return Number(valor).toLocaleString("pt-BR", {
@@ -40,30 +39,31 @@ function textoParaNumeroBR(texto) {
 
   if (!limpo) return 0;
 
-  if (limpo.includes(",")) {
-    return Number(limpo.replace(/\./g, "").replace(",", "."));
+  const ultimaVirgula = limpo.lastIndexOf(",");
+  const ultimoPonto = limpo.lastIndexOf(".");
+  const posicaoSeparador = Math.max(ultimaVirgula, ultimoPonto);
+  const temSeparadorDecimal =
+    posicaoSeparador >= 0 &&
+    limpo.length - posicaoSeparador - 1 > 0 &&
+    limpo.length - posicaoSeparador - 1 <= 2;
+
+  if (temSeparadorDecimal) {
+    const inteiro = limpo.slice(0, posicaoSeparador).replace(/\D/g, "");
+    const decimal = limpo.slice(posicaoSeparador + 1).replace(/\D/g, "").padEnd(2, "0").slice(0, 2);
+    return Number(`${inteiro || "0"}.${decimal}`);
   }
 
-  return Number(limpo.replace(/\./g, ""));
+  return Number(limpo.replace(/\D/g, ""));
 }
 
-function aplicarMascaraValorNota(evento) {
-  const inputType = evento.inputType || "";
-  const caractere = evento.data || "";
+function limparValorNotaDigitado() {
+  elementos.valorNota.value = elementos.valorNota.value.replace(/[^\d.,]/g, "");
+}
 
-  if (inputType === "deleteContentBackward") {
-    valorNotaDigitado = valorNotaDigitado.slice(0, -1);
-  } else if (inputType === "insertFromPaste") {
-    const valorColado = textoParaNumeroBR(elementos.valorNota.value);
-    valorNotaDigitado = valorColado > 0 ? String(Math.round(valorColado)) : "";
-  } else if (/^\d$/.test(caractere)) {
-    valorNotaDigitado += caractere;
-  } else {
-    const somenteDigitos = elementos.valorNota.value.replace(/\D/g, "");
-    valorNotaDigitado = somenteDigitos;
-  }
+function formatarValorNotaAoSair() {
+  const valor = textoParaNumeroBR(elementos.valorNota.value);
 
-  elementos.valorNota.value = valorNotaDigitado ? formatarNumeroBR(Number(valorNotaDigitado)) : "";
+  elementos.valorNota.value = valor > 0 ? formatarNumeroBR(valor) : "";
 }
 
 function nomeDestino(uf) {
@@ -355,7 +355,8 @@ async function carregarHistorico() {
 }
 
 elementos.botaoCalcular.addEventListener("click", calcular);
-elementos.valorNota.addEventListener("input", aplicarMascaraValorNota);
+elementos.valorNota.addEventListener("input", limparValorNotaDigitado);
+elementos.valorNota.addEventListener("blur", formatarValorNotaAoSair);
 elementos.botaoExportarCsv.addEventListener("click", exportarHistoricoCsv);
 elementos.botaoTema.addEventListener("click", alternarTema);
 elementos.botoesFiltro.forEach((botao) => {
