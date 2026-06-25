@@ -93,6 +93,7 @@ async function inicializarBanco() {
       id SERIAL PRIMARY KEY,
       criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       data TEXT NOT NULL,
+      cliente TEXT,
       origem TEXT NOT NULL,
       destino TEXT NOT NULL,
       valor_nota NUMERIC(12, 2) NOT NULL,
@@ -103,6 +104,11 @@ async function inicializarBanco() {
       melhor_valor NUMERIC(12, 2) NOT NULL,
       economia NUMERIC(12, 2) NOT NULL
     )
+  `);
+
+  await pool.query(`
+    ALTER TABLE cotacoes
+    ADD COLUMN IF NOT EXISTS cliente TEXT
   `);
 
   await pool.query(`
@@ -125,6 +131,7 @@ function normalizarCotacaoBanco(row) {
   return {
     id: row.id,
     data: row.data,
+    cliente: row.cliente || "",
     origem: row.origem,
     destino: row.destino,
     valorNota: Number(row.valor_nota),
@@ -147,6 +154,7 @@ async function salvarCotacao(cotacao) {
     `
       INSERT INTO cotacoes (
         data,
+        cliente,
         origem,
         destino,
         valor_nota,
@@ -157,10 +165,11 @@ async function salvarCotacao(cotacao) {
         melhor_valor,
         economia
       )
-      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10, $11)
     `,
     [
       cotacao.data,
+      cotacao.cliente,
       cotacao.origem,
       cotacao.destino,
       cotacao.valorNota,
@@ -181,6 +190,7 @@ async function listarCotacoes() {
     SELECT
       id,
       data,
+      cliente,
       origem,
       destino,
       valor_nota,
@@ -409,8 +419,9 @@ app.use(express.static("public"));
 app.post("/calcular", async (req, res) => {
   registrarAcesso(req, "calculo");
 
-  const { destino, valorNota, peso } = req.body;
+  const { cliente, destino, valorNota, peso } = req.body;
   const regrasDestino = regrasFrete[destino];
+  const clienteNormalizado = typeof cliente === "string" ? cliente.trim().slice(0, 120) : "";
 
   if (
     typeof destino !== "string" ||
@@ -447,6 +458,7 @@ app.post("/calcular", async (req, res) => {
 
   const cotacao = {
     data: new Date().toLocaleString("pt-BR"),
+    cliente: clienteNormalizado,
     origem: ORIGEM_FIXA,
     destino,
     valorNota: arredondarMoeda(valorNota),

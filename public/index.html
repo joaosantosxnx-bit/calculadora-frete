@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=20">
+  <link rel="stylesheet" href="/style.css?v=21">
 </head>
 <body>
   <div class="page">
@@ -32,6 +32,11 @@
         <div class="field">
           <label for="origem">Origem</label>
           <input id="origem" type="text" value="Serra - ES" readonly>
+        </div>
+
+        <div class="field">
+          <label for="cliente">Nome do cliente</label>
+          <input id="cliente" type="text" maxlength="120" autocomplete="organization" placeholder="Ex: Cliente GEOFIN">
         </div>
 
         <div class="field">
@@ -97,6 +102,6 @@
   </div>
 
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script src="/script.js?v=20"></script>
+  <script src="/script.js?v=21"></script>
 </body>
 </html>

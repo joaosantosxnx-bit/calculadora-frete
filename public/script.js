@@ -1,6 +1,7 @@
 const origemFixa = "Serra - ES";
 
 const elementos = {
+  cliente: document.getElementById("cliente"),
   ufDestino: document.getElementById("ufDestino"),
   valorNota: document.getElementById("valorNota"),
   peso: document.getElementById("peso"),
@@ -144,6 +145,20 @@ function escaparCsv(valor) {
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function nomeCliente(valor) {
+  const cliente = String(valor || "").trim();
+  return cliente || "Não informado";
+}
+
 async function exportarHistoricoCsv() {
   try {
     const resposta = await fetch("/historico");
@@ -154,7 +169,7 @@ async function exportarHistoricoCsv() {
       return;
     }
 
-    const colunas = ["data", "origem", "destino", "valorNota", "peso", "melhorOpcao", "melhorValor", "economia", "transportadoras"];
+    const colunas = ["data", "cliente", "origem", "destino", "valorNota", "peso", "melhorOpcao", "melhorValor", "economia", "transportadoras"];
     const linhas = historico.map((item) => {
       const linha = {
         ...item,
@@ -196,6 +211,7 @@ function exibirMensagem(titulo, texto, tipo = "empty") {
 
 function dadosDoFormulario() {
   return {
+    cliente: elementos.cliente.value.trim(),
     destino: elementos.ufDestino.value,
     valorNota: textoParaNumeroBR(elementos.valorNota.value),
     peso: Number(elementos.peso.value)
@@ -210,8 +226,10 @@ function validarFormulario({ destino, valorNota, peso }) {
 }
 
 function montarResultado(dados, entrada) {
+  const cliente = nomeCliente(entrada.cliente);
   const resumoCopiavel = [
     "Cotação de frete GEOFIN",
+    `Cliente: ${cliente}`,
     `Origem: ${origemFixa}`,
     `Destino: ${nomeDestino(entrada.destino)}`,
     `Valor da nota: ${moeda(entrada.valorNota)}`,
@@ -226,6 +244,10 @@ function montarResultado(dados, entrada) {
       <div class="info-card">
         <span>Origem</span>
         <strong>${origemFixa}</strong>
+      </div>
+      <div class="info-card">
+        <span>Cliente</span>
+        <strong>${escaparHtml(cliente)}</strong>
       </div>
       <div class="info-card">
         <span>UF destino</span>
@@ -330,6 +352,10 @@ async function carregarHistorico() {
         <div>
           <span>Data</span>
           <strong>${item.data}</strong>
+        </div>
+        <div>
+          <span>Cliente</span>
+          <strong>${escaparHtml(nomeCliente(item.cliente))}</strong>
         </div>
         <div>
           <span>Destino</span>
