@@ -373,6 +373,10 @@ async function carregarHistorico() {
           <span>Melhor</span>
           <strong>${item.melhorOpcao}</strong>
         </div>
+        <div>
+          <span>Frete</span>
+          <strong>${moeda(item.melhorValor)}</strong>
+        </div>
       </div>
     `).join("");
   } catch (erro) {
