@@ -325,14 +325,16 @@ function calcularRegraBase(regra, valorNota, peso) {
   const valorPorKg = peso * regra.rkg;
   const valorPorNota = valorNota * regra.percentualNota;
   const minimo = regra.minimo || 0;
-  const valorFinal = Math.max(valorPorKg, valorPorNota, minimo);
+  const valorCalculado = Math.max(valorPorKg, valorPorNota, minimo);
+  const valorFinal = valorCalculado / DIVISOR_FINAL_COTACAO;
 
   return {
     valorFinal,
     detalhes: {
       valorPorKg,
       valorPorNota,
-      minimo
+      minimo,
+      valorCalculado
     }
   };
 }
