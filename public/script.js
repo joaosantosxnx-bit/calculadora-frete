@@ -10,7 +10,8 @@ const elementos = {
   historicoLista: document.getElementById("historicoLista"),
   botaoExportarCsv: document.getElementById("btnExportCsv"),
   botaoTema: document.getElementById("btnTema"),
-  botoesFiltro: document.querySelectorAll("[data-filtro]")
+  filtroGrupo: document.querySelector(".filter-group"),
+  logoSimbolo: document.getElementById("logoSimbolo")
 };
 
 let filtroAtual = "";
@@ -67,17 +68,49 @@ function formatarValorNotaAoSair() {
   elementos.valorNota.value = valor > 0 ? formatarNumeroBR(valor) : "";
 }
 
-function nomeDestino(uf) {
-  const nomes = {
-    ES: "Espírito Santo",
-    SP_CAPITAL: "São Paulo - Capital",
-    SP_INTERIOR: "São Paulo - Interior",
-    MG: "Minas Gerais",
-    RJ: "Rio de Janeiro",
-    BA: "Bahia"
-  };
+const nomesDestino = {
+  ES: "Espírito Santo",
+  SP_CAPITAL: "São Paulo - Capital",
+  SP_INTERIOR: "São Paulo - Interior",
+  MG: "Minas Gerais",
+  RJ: "Rio de Janeiro",
+  BA: "Bahia"
+};
 
-  return nomes[uf] || uf;
+function nomeDestino(uf) {
+  return escaparHtml(nomesDestino[uf] || uf);
+}
+
+// Acrescenta ao select e aos filtros os destinos cadastrados pelo painel (os fixos já estão no HTML).
+async function carregarDestinos() {
+  try {
+    const resposta = await fetch("/destinos");
+    const destinos = await resposta.json();
+    if (!Array.isArray(destinos)) return;
+
+    destinos.forEach(({ codigo, nome }) => {
+      nomesDestino[codigo] = nome;
+
+      if (!elementos.ufDestino.querySelector(`option[value="${CSS.escape(codigo)}"]`)) {
+        elementos.ufDestino.add(new Option(nome, codigo));
+      }
+
+      if (!elementos.filtroGrupo.querySelector(`[data-filtro="${CSS.escape(codigo)}"]`)) {
+        const botao = document.createElement("button");
+        botao.className = "filter-button";
+        botao.type = "button";
+        botao.dataset.filtro = codigo;
+        botao.textContent = codigo.replace(/_/g, " ");
+        botao.title = nome;
+        botao.addEventListener("click", () => aplicarFiltro(codigo));
+        elementos.filtroGrupo.appendChild(botao);
+      }
+    });
+
+    atualizarBotoesFiltro();
+  } catch (erro) {
+    // Mantém os destinos fixos do HTML.
+  }
 }
 
 function showToast(mensagem, timeout = 3000) {
@@ -114,7 +147,7 @@ function iniciarTema() {
 }
 
 function atualizarBotoesFiltro() {
-  elementos.botoesFiltro.forEach((botao) => {
+  elementos.filtroGrupo.querySelectorAll("[data-filtro]").forEach((botao) => {
     const ativo = botao.dataset.filtro === filtroAtual;
     botao.classList.toggle("is-active", ativo);
     botao.setAttribute("aria-pressed", String(ativo));
@@ -231,7 +264,7 @@ function montarResultado(dados, entrada) {
     "Cotação de frete GEOFIN",
     `Cliente: ${cliente}`,
     `Origem: ${origemFixa}`,
-    `Destino: ${nomeDestino(entrada.destino)}`,
+    `Destino: ${nomesDestino[entrada.destino] || entrada.destino}`,
     `Valor da nota: ${moeda(entrada.valorNota)}`,
     `Peso: ${numeroFormatado(entrada.peso)} kg`,
     `Melhor opção: ${dados.melhorOpcao}`,
@@ -261,12 +294,12 @@ function montarResultado(dados, entrada) {
 
     <div class="winner">
       <span>Melhor opção</span>
-      <h2>${dados.melhorOpcao}</h2>
+      <h2>${escaparHtml(dados.melhorOpcao)}</h2>
       <p>Valor estimado: <strong>${moeda(dados.melhorValor)}</strong></p>
     </div>
 
     ${(dados.avisos || []).map((aviso) => `
-      <p class="error-text">${aviso.mensagem}</p>
+      <p class="error-text">${escaparHtml(aviso.mensagem)}</p>
     `).join("")}
 
     <div class="comparison" role="table" aria-label="Comparativo de frete">
@@ -276,7 +309,7 @@ function montarResultado(dados, entrada) {
       </div>
       ${dados.transportadoras.map((item) => `
         <div class="comparison-row ${item.transportadora === dados.melhorOpcao ? "best-row" : ""}" role="row">
-          <div role="cell"><strong>${item.transportadora}</strong></div>
+          <div role="cell"><strong>${escaparHtml(item.transportadora)}</strong></div>
           <div class="value" role="cell">${moeda(item.valor)}</div>
         </div>
       `).join("")}
@@ -351,7 +384,7 @@ async function carregarHistorico() {
       <div class="history-item">
         <div>
           <span>Data</span>
-          <strong>${item.data}</strong>
+          <strong>${escaparHtml(item.data)}</strong>
         </div>
         <div>
           <span>Cliente</span>
@@ -371,7 +404,7 @@ async function carregarHistorico() {
         </div>
         <div>
           <span>Melhor</span>
-          <strong>${item.melhorOpcao}</strong>
+          <strong>${escaparHtml(item.melhorOpcao)}</strong>
         </div>
         <div>
           <span>Frete</span>
@@ -389,10 +422,186 @@ elementos.valorNota.addEventListener("input", limparValorNotaDigitado);
 elementos.valorNota.addEventListener("blur", formatarValorNotaAoSair);
 elementos.botaoExportarCsv.addEventListener("click", exportarHistoricoCsv);
 elementos.botaoTema.addEventListener("click", alternarTema);
-elementos.botoesFiltro.forEach((botao) => {
+elementos.filtroGrupo.querySelectorAll("[data-filtro]").forEach((botao) => {
   botao.addEventListener("click", () => aplicarFiltro(botao.dataset.filtro));
+});
+
+// ---------- Cadastro de fretes (acesso escondido: 5 cliques rápidos no logo "F") ----------
+
+const admin = {
+  dialog: document.getElementById("adminDialog"),
+  fechar: document.getElementById("adminFechar"),
+  login: document.getElementById("adminLogin"),
+  senha: document.getElementById("adminSenha"),
+  painel: document.getElementById("adminPainel"),
+  form: document.getElementById("adminForm"),
+  destino: document.getElementById("adminDestino"),
+  destinoCodigo: document.getElementById("adminDestinoCodigo"),
+  destinoNome: document.getElementById("adminDestinoNome"),
+  transportadora: document.getElementById("adminTransportadora"),
+  rkg: document.getElementById("adminRkg"),
+  percentual: document.getElementById("adminPercentual"),
+  minimo: document.getElementById("adminMinimo"),
+  salvar: document.getElementById("adminSalvar"),
+  lista: document.getElementById("adminLista")
+};
+const NOVO_DESTINO = "__novo__";
+let senhaAdmin = "";
+let cliquesLogo = [];
+
+function numeroAdmin(texto) {
+  const bruto = String(texto || "").trim().replace(/\s|R\$|%/g, "");
+  if (!bruto) return 0;
+  // Com vírgula: formato brasileiro (1.234,56). Sem vírgula: ponto é decimal (1.9336).
+  const limpo = bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto;
+  return Number(limpo);
+}
+
+function formatarTarifa(valor, casas = 4) {
+  return Number(valor).toLocaleString("pt-BR", { maximumFractionDigits: casas });
+}
+
+async function chamarAdmin(url, opcoes = {}) {
+  const resposta = await fetch(url, {
+    ...opcoes,
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-senha": senhaAdmin,
+      ...(opcoes.headers || {})
+    }
+  });
+  const dados = await resposta.json().catch(() => ({}));
+
+  if (resposta.status === 401) {
+    senhaAdmin = "";
+    admin.painel.hidden = true;
+    admin.login.hidden = false;
+  }
+
+  if (!resposta.ok) throw new Error(dados.erro || "Falha na operação.");
+  return dados;
+}
+
+function alternarCamposNovoDestino() {
+  const novo = admin.destino.value === NOVO_DESTINO;
+  admin.form.querySelectorAll("[data-novo-destino]").forEach((campo) => {
+    campo.hidden = !novo;
+  });
+  admin.destinoCodigo.required = novo;
+}
+
+function renderizarAdmin({ extras, destinos }) {
+  const selecionado = admin.destino.value;
+  admin.destino.innerHTML = destinos
+    .map(({ codigo, nome }) => `<option value="${escaparHtml(codigo)}">${escaparHtml(nome)}</option>`)
+    .join("") + `<option value="${NOVO_DESTINO}">+ Novo destino...</option>`;
+  if (selecionado) admin.destino.value = selecionado;
+  alternarCamposNovoDestino();
+
+  if (!extras.length) {
+    admin.lista.innerHTML = `<p class="muted">Nenhum frete cadastrado pelo painel.</p>`;
+    return;
+  }
+
+  admin.lista.innerHTML = extras.map((item) => `
+    <div class="admin-item">
+      <div>
+        <strong>${escaparHtml(item.transportadora)}</strong>
+        <small>${nomeDestino(item.destino)} • R$ ${formatarTarifa(item.rkg)}/kg • ${formatarTarifa(item.percentualNota * 100, 2)}% nota • mín. ${moeda(item.minimo)}</small>
+      </div>
+      <button class="secondary-action" type="button" data-remover="${item.id}">Remover</button>
+    </div>
+  `).join("");
+}
+
+async function carregarAdmin() {
+  const dados = await chamarAdmin("/admin/fretes");
+  admin.login.hidden = true;
+  admin.painel.hidden = false;
+  renderizarAdmin(dados);
+}
+
+function abrirAdmin() {
+  if (admin.dialog.open) return;
+  admin.dialog.showModal();
+
+  if (senhaAdmin) {
+    carregarAdmin().catch((erro) => showToast(erro.message));
+  } else {
+    admin.senha.value = "";
+    admin.senha.focus();
+  }
+}
+
+elementos.logoSimbolo.addEventListener("click", () => {
+  const agora = Date.now();
+  cliquesLogo = [...cliquesLogo.filter((momento) => agora - momento < 2000), agora];
+
+  if (cliquesLogo.length >= 5) {
+    cliquesLogo = [];
+    abrirAdmin();
+  }
+});
+
+admin.fechar.addEventListener("click", () => admin.dialog.close());
+admin.destino.addEventListener("change", alternarCamposNovoDestino);
+
+admin.login.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  senhaAdmin = admin.senha.value;
+
+  try {
+    await carregarAdmin();
+  } catch (erro) {
+    senhaAdmin = "";
+    showToast(erro.message);
+  }
+});
+
+admin.form.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const novo = admin.destino.value === NOVO_DESTINO;
+  const corpo = {
+    destino: novo ? admin.destinoCodigo.value : admin.destino.value,
+    destinoNome: novo ? admin.destinoNome.value : "",
+    transportadora: admin.transportadora.value,
+    rkg: numeroAdmin(admin.rkg.value),
+    percentualNota: numeroAdmin(admin.percentual.value) / 100,
+    minimo: numeroAdmin(admin.minimo.value)
+  };
+
+  admin.salvar.disabled = true;
+
+  try {
+    const salvo = await chamarAdmin("/admin/fretes", { method: "POST", body: JSON.stringify(corpo) });
+    showToast(`Frete ${salvo.transportadora} salvo.`);
+    admin.form.reset();
+    if (novo) admin.destino.value = salvo.destino;
+    await carregarAdmin();
+    if (novo) admin.destino.value = salvo.destino;
+    alternarCamposNovoDestino();
+    carregarDestinos();
+  } catch (erro) {
+    showToast(erro.message);
+  } finally {
+    admin.salvar.disabled = false;
+  }
+});
+
+admin.lista.addEventListener("click", async (evento) => {
+  const botao = evento.target.closest("[data-remover]");
+  if (!botao || !confirm("Remover este frete cadastrado?")) return;
+
+  try {
+    await chamarAdmin(`/admin/fretes/${botao.dataset.remover}`, { method: "DELETE" });
+    showToast("Frete removido.");
+    await carregarAdmin();
+  } catch (erro) {
+    showToast(erro.message);
+  }
 });
 
 iniciarTema();
 atualizarBotoesFiltro();
+carregarDestinos();
 carregarHistorico();

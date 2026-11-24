@@ -571,3 +571,119 @@ footer {
     width: 100%;
   }
 }
+
+/* ---------- Cadastro de fretes (janela escondida) ---------- */
+
+.admin-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  margin: auto;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.admin-dialog::backdrop {
+  background: rgba(3, 12, 28, 0.6);
+}
+
+.admin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 22px 0;
+}
+
+.admin-head span,
+.admin-lista > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-close {
+  width: 40px;
+  min-height: 40px;
+  background: #ffffff;
+  border-color: #b9c7c0;
+  color: var(--green-dark);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.admin-close:hover:not(:disabled) {
+  background: var(--green-soft);
+}
+
+.admin-body {
+  padding: 18px 22px 22px;
+}
+
+.admin-body > form > button,
+#adminLogin button {
+  width: 100%;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+
+.admin-hint {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-lista {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.admin-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-item small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.filter-group {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(52px, auto);
+}
+
+@media (max-width: 640px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    grid-auto-flow: row;
+  }
+}

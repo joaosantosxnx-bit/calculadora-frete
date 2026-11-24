@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=22">
+  <link rel="stylesheet" href="/style.css?v=23">
 </head>
 <body>
   <div class="page">
     <header class="header">
       <div class="brand" aria-label="GEOFIN">
-        <img src="/assets/logo-f.png" class="logo-symbol" alt="">
+        <img src="/assets/logo-f.png" class="logo-symbol" id="logoSimbolo" alt="">
         <img src="/assets/logo-geofin.png" class="logo-geofin" alt="GEOFIN">
       </div>
 
@@ -101,7 +101,67 @@
     </footer>
   </div>
 
+  <dialog class="admin-dialog" id="adminDialog" aria-labelledby="adminTitulo">
+    <div class="admin-head">
+      <div>
+        <span>Restrito</span>
+        <h2 id="adminTitulo">Cadastro de fretes</h2>
+      </div>
+      <button class="admin-close" id="adminFechar" type="button" aria-label="Fechar">&times;</button>
+    </div>
+
+    <form id="adminLogin" class="admin-body">
+      <div class="field">
+        <label for="adminSenha">Senha</label>
+        <input id="adminSenha" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit">Entrar</button>
+    </form>
+
+    <div id="adminPainel" class="admin-body" hidden>
+      <form id="adminForm">
+        <div class="admin-grid">
+          <div class="field">
+            <label for="adminDestino">Destino</label>
+            <select id="adminDestino" required></select>
+          </div>
+          <div class="field">
+            <label for="adminTransportadora">Transportadora</label>
+            <input id="adminTransportadora" type="text" maxlength="60" required placeholder="Ex: NOVA LOG">
+          </div>
+          <div class="field" data-novo-destino hidden>
+            <label for="adminDestinoCodigo">Código do destino</label>
+            <input id="adminDestinoCodigo" type="text" maxlength="20" placeholder="Ex: PR">
+          </div>
+          <div class="field" data-novo-destino hidden>
+            <label for="adminDestinoNome">Nome do destino</label>
+            <input id="adminDestinoNome" type="text" maxlength="60" placeholder="Ex: Paraná">
+          </div>
+          <div class="field">
+            <label for="adminRkg">R$ por kg</label>
+            <input id="adminRkg" type="text" inputmode="decimal" placeholder="Ex: 1,9336">
+          </div>
+          <div class="field">
+            <label for="adminPercentual">% sobre a nota</label>
+            <input id="adminPercentual" type="text" inputmode="decimal" placeholder="Ex: 15,47">
+          </div>
+          <div class="field">
+            <label for="adminMinimo">Frete mínimo (R$)</label>
+            <input id="adminMinimo" type="text" inputmode="decimal" placeholder="Ex: 0">
+          </div>
+        </div>
+        <p class="admin-hint">O frete usa o maior valor entre peso &times; R$/kg, nota &times; % e o mínimo. O divisor final (0,82) é aplicado automaticamente. Se a transportadora já existir no destino, a tarifa nova substitui a original.</p>
+        <button id="adminSalvar" type="submit">Salvar frete</button>
+      </form>
+
+      <div class="admin-lista">
+        <span>Fretes cadastrados</span>
+        <div id="adminLista"></div>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script src="/script.js?v=22"></script>
+  <script src="/script.js?v=23"></script>
 </body>
 </html>

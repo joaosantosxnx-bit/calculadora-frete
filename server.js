@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { Pool } = require("pg");
 const regrasFrete = require("./data/freteRules");
 
@@ -12,6 +13,8 @@ app.use(express.json());
 
 const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
 const ACESSOS_PATH = path.join(__dirname, "acessos.json");
+const REGRAS_EXTRAS_PATH = path.join(__dirname, "regras-extras.json");
+const ADMIN_SENHA = process.env.ADMIN_SENHA || "";
 const DATABASE_URL = process.env.DATABASE_URL;
 const pool = DATABASE_URL
   ? new Pool({
@@ -21,7 +24,14 @@ const pool = DATABASE_URL
   : null;
 
 const ORIGEM_FIXA = "Serra - ES";
-const DESTINOS_PERMITIDOS = Object.keys(regrasFrete);
+const NOMES_DESTINO = {
+  ES: "Espírito Santo",
+  SP_CAPITAL: "São Paulo - Capital",
+  SP_INTERIOR: "São Paulo - Interior",
+  MG: "Minas Gerais",
+  RJ: "Rio de Janeiro",
+  BA: "Bahia"
+};
 const DIVISOR_FINAL_COTACAO = 0.82;
 const SAGIX_MENSAGEM_MINIMO = "SAGIX não atende esta operação, pois o valor da nota fiscal ficou abaixo do valor mínimo operacional aceito de R$ 1.250,00.";
 
@@ -85,6 +95,109 @@ function salvarAcessoLocal(acesso) {
   fs.writeFileSync(ACESSOS_PATH, JSON.stringify(acessosLimitados, null, 2));
 }
 
+function lerRegrasExtrasLocais() {
+  if (!fs.existsSync(REGRAS_EXTRAS_PATH)) return [];
+
+  try {
+    const regras = JSON.parse(fs.readFileSync(REGRAS_EXTRAS_PATH, "utf8"));
+    return Array.isArray(regras) ? regras : [];
+  } catch (erro) {
+    return [];
+  }
+}
+
+function gravarRegrasExtrasLocais(regras) {
+  fs.writeFileSync(REGRAS_EXTRAS_PATH, JSON.stringify(regras, null, 2));
+}
+
+async function listarRegrasExtras() {
+  if (!pool) return lerRegrasExtrasLocais();
+
+  const resultado = await pool.query(`
+    SELECT id, destino, destino_nome, transportadora, rkg, percentual_nota, minimo
+    FROM regras_frete_extras
+    ORDER BY destino, transportadora, id
+  `);
+
+  return resultado.rows.map((row) => ({
+    id: row.id,
+    destino: row.destino,
+    destinoNome: row.destino_nome || "",
+    transportadora: row.transportadora,
+    rkg: Number(row.rkg),
+    percentualNota: Number(row.percentual_nota),
+    minimo: Number(row.minimo)
+  }));
+}
+
+async function salvarRegraExtra(regra) {
+  if (!pool) {
+    const regras = lerRegrasExtrasLocais();
+    const id = regras.reduce((maior, item) => Math.max(maior, Number(item.id) || 0), 0) + 1;
+    const nova = { id, ...regra };
+    gravarRegrasExtrasLocais([...regras, nova]);
+    return nova;
+  }
+
+  const resultado = await pool.query(
+    `
+      INSERT INTO regras_frete_extras (destino, destino_nome, transportadora, rkg, percentual_nota, minimo)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `,
+    [regra.destino, regra.destinoNome, regra.transportadora, regra.rkg, regra.percentualNota, regra.minimo]
+  );
+
+  return { id: resultado.rows[0].id, ...regra };
+}
+
+async function removerRegraExtra(id) {
+  if (!pool) {
+    const regras = lerRegrasExtrasLocais();
+    const restantes = regras.filter((item) => Number(item.id) !== id);
+    gravarRegrasExtrasLocais(restantes);
+    return restantes.length !== regras.length;
+  }
+
+  const resultado = await pool.query("DELETE FROM regras_frete_extras WHERE id = $1", [id]);
+  return resultado.rowCount > 0;
+}
+
+// Junta as regras fixas do código com as cadastradas pelo painel.
+// Uma regra cadastrada com o mesmo nome de transportadora no mesmo destino substitui a original.
+async function obterRegrasCompletas() {
+  const extras = await listarRegrasExtras();
+  const regras = {};
+  const nomes = { ...NOMES_DESTINO };
+
+  Object.entries(regrasFrete).forEach(([destino, lista]) => {
+    regras[destino] = [...lista];
+  });
+
+  extras.forEach((extra) => {
+    const lista = regras[extra.destino] || [];
+    const chave = extra.transportadora.toUpperCase();
+    const semDuplicada = lista.filter((regra) => regra.transportadora.toUpperCase() !== chave);
+
+    regras[extra.destino] = [
+      ...semDuplicada,
+      {
+        transportadora: extra.transportadora,
+        tipo: "base",
+        rkg: extra.rkg,
+        percentualNota: extra.percentualNota,
+        minimo: extra.minimo
+      }
+    ];
+
+    if (!nomes[extra.destino]) {
+      nomes[extra.destino] = extra.destinoNome || extra.destino;
+    }
+  });
+
+  return { regras, nomes };
+}
+
 async function inicializarBanco() {
   if (!pool) return;
 
@@ -109,6 +222,19 @@ async function inicializarBanco() {
   await pool.query(`
     ALTER TABLE cotacoes
     ADD COLUMN IF NOT EXISTS cliente TEXT
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS regras_frete_extras (
+      id SERIAL PRIMARY KEY,
+      criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      destino TEXT NOT NULL,
+      destino_nome TEXT,
+      transportadora TEXT NOT NULL,
+      rkg NUMERIC(14, 6) NOT NULL,
+      percentual_nota NUMERIC(10, 6) NOT NULL,
+      minimo NUMERIC(12, 2) NOT NULL DEFAULT 0
+    )
   `);
 
   await pool.query(`
@@ -421,13 +547,23 @@ app.use(express.static("public"));
 app.post("/calcular", async (req, res) => {
   registrarAcesso(req, "calculo");
 
-  const { cliente, destino, valorNota, peso } = req.body;
-  const regrasDestino = regrasFrete[destino];
+  const { cliente, destino, valorNota, peso } = req.body || {};
+  let regrasCompletas;
+
+  try {
+    regrasCompletas = (await obterRegrasCompletas()).regras;
+  } catch (erro) {
+    console.error("Erro ao carregar regras de frete:", erro);
+    return res.status(500).json({ erro: "Não foi possível carregar as regras de frete." });
+  }
+
+  const regrasDestino = Object.prototype.hasOwnProperty.call(regrasCompletas, destino)
+    ? regrasCompletas[destino]
+    : undefined;
   const clienteNormalizado = typeof cliente === "string" ? cliente.trim().slice(0, 120) : "";
 
   if (
     typeof destino !== "string" ||
-    !DESTINOS_PERMITIDOS.includes(destino) ||
     !Array.isArray(regrasDestino) ||
     regrasDestino.length === 0 ||
     !numeroValido(valorNota) ||
@@ -495,6 +631,119 @@ app.get("/historico", async (req, res) => {
     return res.status(500).json({
       erro: "Não foi possível carregar o histórico."
     });
+  }
+});
+
+app.get("/destinos", async (req, res) => {
+  try {
+    const { regras, nomes } = await obterRegrasCompletas();
+    const destinos = Object.keys(regras).map((codigo) => ({ codigo, nome: nomes[codigo] || codigo }));
+    return res.json(destinos);
+  } catch (erro) {
+    console.error("Erro ao listar destinos:", erro);
+    return res.status(500).json({ erro: "Não foi possível carregar os destinos." });
+  }
+});
+
+// ---------- Painel de cadastro (acesso restrito por senha) ----------
+
+const TENTATIVAS_MAXIMAS = 5;
+const BLOQUEIO_MS = 15 * 60 * 1000;
+const tentativasAdmin = new Map();
+
+function hashSenha(texto) {
+  return crypto.createHash("sha256").update(String(texto)).digest();
+}
+
+function senhaConfere(senhaInformada) {
+  return crypto.timingSafeEqual(hashSenha(senhaInformada), hashSenha(ADMIN_SENHA));
+}
+
+function exigirAdmin(req, res, next) {
+  if (!ADMIN_SENHA) {
+    return res.status(503).json({ erro: "Cadastro desativado: defina a variável ADMIN_SENHA no servidor." });
+  }
+
+  const ip = obterIp(req);
+  const agora = Date.now();
+  const registro = tentativasAdmin.get(ip);
+
+  if (registro && registro.bloqueadoAte > agora) {
+    return res.status(429).json({ erro: "Muitas tentativas. Aguarde alguns minutos." });
+  }
+
+  if (!senhaConfere(req.headers["x-admin-senha"] || "")) {
+    const falhasAnteriores = registro && registro.bloqueadoAte === 0 ? registro.falhas : 0;
+    const falhas = falhasAnteriores + 1;
+
+    tentativasAdmin.set(ip, {
+      falhas,
+      bloqueadoAte: falhas >= TENTATIVAS_MAXIMAS ? agora + BLOQUEIO_MS : 0
+    });
+
+    return res.status(401).json({ erro: "Senha incorreta." });
+  }
+
+  tentativasAdmin.delete(ip);
+  return next();
+}
+
+function numeroNaoNegativo(valor) {
+  return typeof valor === "number" && Number.isFinite(valor) && valor >= 0;
+}
+
+function validarNovaRegra(corpo) {
+  const destino = String(corpo.destino || "").trim().toUpperCase().replace(/\s+/g, "_");
+  const destinoNome = String(corpo.destinoNome || "").trim().slice(0, 60);
+  const transportadora = String(corpo.transportadora || "").trim().toUpperCase().slice(0, 60);
+  const { rkg, percentualNota, minimo = 0 } = corpo;
+
+  if (!/^[A-Z0-9_]{2,20}$/.test(destino)) return { erro: "Código de destino inválido (use letras, números ou _)." };
+  if (!transportadora) return { erro: "Informe o nome da transportadora." };
+  if (!numeroNaoNegativo(rkg) || !numeroNaoNegativo(percentualNota) || !numeroNaoNegativo(minimo)) {
+    return { erro: "Valores devem ser números maiores ou iguais a zero." };
+  }
+  if (percentualNota >= 1) return { erro: "Percentual sobre a nota deve ser menor que 100%." };
+  if (rkg === 0 && percentualNota === 0 && minimo === 0) return { erro: "Informe ao menos uma tarifa maior que zero." };
+
+  return { regra: { destino, destinoNome, transportadora, rkg, percentualNota, minimo } };
+}
+
+app.get("/admin/fretes", exigirAdmin, async (req, res) => {
+  try {
+    const [extras, { regras, nomes }] = await Promise.all([listarRegrasExtras(), obterRegrasCompletas()]);
+    const destinos = Object.keys(regras).map((codigo) => ({ codigo, nome: nomes[codigo] || codigo }));
+    return res.json({ extras, destinos });
+  } catch (erro) {
+    console.error("Erro ao listar fretes cadastrados:", erro);
+    return res.status(500).json({ erro: "Não foi possível carregar os fretes cadastrados." });
+  }
+});
+
+app.post("/admin/fretes", exigirAdmin, async (req, res) => {
+  const { regra, erro } = validarNovaRegra(req.body || {});
+  if (erro) return res.status(400).json({ erro });
+
+  try {
+    const salva = await salvarRegraExtra(regra);
+    return res.status(201).json(salva);
+  } catch (falha) {
+    console.error("Erro ao salvar frete:", falha);
+    return res.status(500).json({ erro: "Não foi possível salvar o frete." });
+  }
+});
+
+app.delete("/admin/fretes/:id", exigirAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ erro: "Identificador inválido." });
+
+  try {
+    const removida = await removerRegraExtra(id);
+    if (!removida) return res.status(404).json({ erro: "Frete não encontrado." });
+    return res.json({ ok: true });
+  } catch (erro) {
+    console.error("Erro ao remover frete:", erro);
+    return res.status(500).json({ erro: "Não foi possível remover o frete." });
   }
 });
 
