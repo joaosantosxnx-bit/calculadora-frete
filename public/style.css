@@ -637,6 +637,53 @@ footer {
   gap: 0 12px;
 }
 
+.admin-full {
+  grid-column: 1 / -1;
+}
+
+.admin-destinos {
+  min-width: 0;
+  border: 0;
+}
+
+.admin-destinos legend {
+  margin-bottom: 7px;
+  color: #314138;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.admin-check:has(input:checked) {
+  background: var(--green-soft);
+  border-color: var(--green);
+}
+
 .admin-hint {
   margin-bottom: 14px;
   color: var(--muted);

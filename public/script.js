@@ -435,7 +435,7 @@ const admin = {
   senha: document.getElementById("adminSenha"),
   painel: document.getElementById("adminPainel"),
   form: document.getElementById("adminForm"),
-  destino: document.getElementById("adminDestino"),
+  destinos: document.getElementById("adminDestinos"),
   destinoCodigo: document.getElementById("adminDestinoCodigo"),
   destinoNome: document.getElementById("adminDestinoNome"),
   transportadora: document.getElementById("adminTransportadora"),
@@ -445,7 +445,6 @@ const admin = {
   salvar: document.getElementById("adminSalvar"),
   lista: document.getElementById("adminLista")
 };
-const NOVO_DESTINO = "__novo__";
 let senhaAdmin = "";
 let cliquesLogo = [];
 
@@ -482,21 +481,16 @@ async function chamarAdmin(url, opcoes = {}) {
   return dados;
 }
 
-function alternarCamposNovoDestino() {
-  const novo = admin.destino.value === NOVO_DESTINO;
-  admin.form.querySelectorAll("[data-novo-destino]").forEach((campo) => {
-    campo.hidden = !novo;
-  });
-  admin.destinoCodigo.required = novo;
-}
-
 function renderizarAdmin({ extras, destinos }) {
-  const selecionado = admin.destino.value;
-  admin.destino.innerHTML = destinos
-    .map(({ codigo, nome }) => `<option value="${escaparHtml(codigo)}">${escaparHtml(nome)}</option>`)
-    .join("") + `<option value="${NOVO_DESTINO}">+ Novo destino...</option>`;
-  if (selecionado) admin.destino.value = selecionado;
-  alternarCamposNovoDestino();
+  const marcados = new Set(
+    [...admin.destinos.querySelectorAll("input:checked")].map((caixa) => caixa.value)
+  );
+  admin.destinos.innerHTML = destinos.map(({ codigo, nome }) => `
+    <label class="admin-check">
+      <input type="checkbox" value="${escaparHtml(codigo)}" ${marcados.has(codigo) ? "checked" : ""}>
+      <span>${escaparHtml(nome)}</span>
+    </label>
+  `).join("");
 
   if (!extras.length) {
     admin.lista.innerHTML = `<p class="muted">Nenhum frete cadastrado pelo painel.</p>`;
@@ -544,7 +538,6 @@ elementos.logoSimbolo.addEventListener("click", () => {
 });
 
 admin.fechar.addEventListener("click", () => admin.dialog.close());
-admin.destino.addEventListener("change", alternarCamposNovoDestino);
 
 admin.login.addEventListener("submit", async (evento) => {
   evento.preventDefault();
@@ -560,10 +553,19 @@ admin.login.addEventListener("submit", async (evento) => {
 
 admin.form.addEventListener("submit", async (evento) => {
   evento.preventDefault();
-  const novo = admin.destino.value === NOVO_DESTINO;
+  const destinos = [...admin.destinos.querySelectorAll("input:checked")]
+    .map((caixa) => ({ codigo: caixa.value, nome: "" }));
+  const codigoNovo = admin.destinoCodigo.value.trim();
+
+  if (codigoNovo) destinos.push({ codigo: codigoNovo, nome: admin.destinoNome.value.trim() });
+
+  if (destinos.length === 0) {
+    showToast("Marque ao menos um destino.");
+    return;
+  }
+
   const corpo = {
-    destino: novo ? admin.destinoCodigo.value : admin.destino.value,
-    destinoNome: novo ? admin.destinoNome.value : "",
+    destinos,
     transportadora: admin.transportadora.value,
     rkg: numeroAdmin(admin.rkg.value),
     percentualNota: numeroAdmin(admin.percentual.value) / 100,
@@ -574,12 +576,9 @@ admin.form.addEventListener("submit", async (evento) => {
 
   try {
     const salvo = await chamarAdmin("/admin/fretes", { method: "POST", body: JSON.stringify(corpo) });
-    showToast(`Frete ${salvo.transportadora} salvo.`);
+    showToast(`${salvo.transportadora} salvo em ${salvo.salvas.length} destino(s).`);
     admin.form.reset();
-    if (novo) admin.destino.value = salvo.destino;
     await carregarAdmin();
-    if (novo) admin.destino.value = salvo.destino;
-    alternarCamposNovoDestino();
     carregarDestinos();
   } catch (erro) {
     showToast(erro.message);

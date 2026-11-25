@@ -15,6 +15,11 @@ const HISTORICO_PATH = path.join(__dirname, "cotacoes.json");
 const ACESSOS_PATH = path.join(__dirname, "acessos.json");
 const REGRAS_EXTRAS_PATH = path.join(__dirname, "regras-extras.json");
 const ADMIN_SENHA = process.env.ADMIN_SENHA || "";
+// Senha padrão do painel guardada só como hash (scrypt). A variável ADMIN_SENHA, se existir, tem prioridade.
+const ADMIN_SENHA_PADRAO = {
+  salt: "a2582b2a8799c97a207ea3ac104cb50c",
+  hash: "9afae54e53f0811db4faa8f3cdc6b9424e513fb85368704e07d8919cb5477351"
+};
 const DATABASE_URL = process.env.DATABASE_URL;
 const pool = DATABASE_URL
   ? new Pool({
@@ -656,14 +661,15 @@ function hashSenha(texto) {
 }
 
 function senhaConfere(senhaInformada) {
-  return crypto.timingSafeEqual(hashSenha(senhaInformada), hashSenha(ADMIN_SENHA));
+  if (ADMIN_SENHA) {
+    return crypto.timingSafeEqual(hashSenha(senhaInformada), hashSenha(ADMIN_SENHA));
+  }
+
+  const calculado = crypto.scryptSync(String(senhaInformada), ADMIN_SENHA_PADRAO.salt, 32);
+  return crypto.timingSafeEqual(calculado, Buffer.from(ADMIN_SENHA_PADRAO.hash, "hex"));
 }
 
 function exigirAdmin(req, res, next) {
-  if (!ADMIN_SENHA) {
-    return res.status(503).json({ erro: "Cadastro desativado: defina a variável ADMIN_SENHA no servidor." });
-  }
-
   const ip = obterIp(req);
   const agora = Date.now();
   const registro = tentativasAdmin.get(ip);
@@ -695,6 +701,7 @@ function numeroNaoNegativo(valor) {
 function validarNovaRegra(corpo) {
   const destino = String(corpo.destino || "").trim().toUpperCase().replace(/\s+/g, "_");
   const destinoNome = String(corpo.destinoNome || "").trim().slice(0, 60);
+  if (destino === "__PROTO__") return { erro: "Código de destino inválido." };
   const transportadora = String(corpo.transportadora || "").trim().toUpperCase().slice(0, 60);
   const { rkg, percentualNota, minimo = 0 } = corpo;
 
@@ -720,13 +727,31 @@ app.get("/admin/fretes", exigirAdmin, async (req, res) => {
   }
 });
 
+// Aceita vários destinos de uma vez: { transportadora, rkg, percentualNota, minimo, destinos: [{ codigo, nome }] }
 app.post("/admin/fretes", exigirAdmin, async (req, res) => {
-  const { regra, erro } = validarNovaRegra(req.body || {});
-  if (erro) return res.status(400).json({ erro });
+  const corpo = req.body || {};
+  const destinos = Array.isArray(corpo.destinos)
+    ? corpo.destinos
+    : [{ codigo: corpo.destino, nome: corpo.destinoNome }];
+
+  if (destinos.length === 0) return res.status(400).json({ erro: "Marque ao menos um destino." });
+  if (destinos.length > 50) return res.status(400).json({ erro: "Destinos demais em um único cadastro." });
+
+  const regras = [];
+  for (const destino of destinos) {
+    const { regra, erro } = validarNovaRegra({
+      ...corpo,
+      destino: destino && destino.codigo,
+      destinoNome: destino && destino.nome
+    });
+    if (erro) return res.status(400).json({ erro });
+    if (!regras.some((item) => item.destino === regra.destino)) regras.push(regra);
+  }
 
   try {
-    const salva = await salvarRegraExtra(regra);
-    return res.status(201).json(salva);
+    const salvas = [];
+    for (const regra of regras) salvas.push(await salvarRegraExtra(regra));
+    return res.status(201).json({ transportadora: regras[0].transportadora, salvas });
   } catch (falha) {
     console.error("Erro ao salvar frete:", falha);
     return res.status(500).json({ erro: "Não foi possível salvar o frete." });

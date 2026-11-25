@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete GEOFIN</title>
-  <link rel="stylesheet" href="/style.css?v=23">
+  <link rel="stylesheet" href="/style.css?v=24">
 </head>
 <body>
   <div class="page">
@@ -121,20 +121,20 @@
     <div id="adminPainel" class="admin-body" hidden>
       <form id="adminForm">
         <div class="admin-grid">
-          <div class="field">
-            <label for="adminDestino">Destino</label>
-            <select id="adminDestino" required></select>
-          </div>
-          <div class="field">
+          <div class="field admin-full">
             <label for="adminTransportadora">Transportadora</label>
             <input id="adminTransportadora" type="text" maxlength="60" required placeholder="Ex: NOVA LOG">
           </div>
-          <div class="field" data-novo-destino hidden>
-            <label for="adminDestinoCodigo">Código do destino</label>
+          <fieldset class="field admin-full admin-destinos">
+            <legend>Onde atende</legend>
+            <div id="adminDestinos" class="admin-checks"></div>
+          </fieldset>
+          <div class="field">
+            <label for="adminDestinoCodigo">Novo destino: código (opcional)</label>
             <input id="adminDestinoCodigo" type="text" maxlength="20" placeholder="Ex: PR">
           </div>
-          <div class="field" data-novo-destino hidden>
-            <label for="adminDestinoNome">Nome do destino</label>
+          <div class="field">
+            <label for="adminDestinoNome">Novo destino: nome</label>
             <input id="adminDestinoNome" type="text" maxlength="60" placeholder="Ex: Paraná">
           </div>
           <div class="field">
@@ -162,6 +162,6 @@
   </dialog>
 
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script src="/script.js?v=23"></script>
+  <script src="/script.js?v=24"></script>
 </body>
 </html>
